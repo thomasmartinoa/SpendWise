@@ -398,7 +398,12 @@ class AppState extends ChangeNotifier {
         amount = a;
       });
 
-  int _now() => DateTime.now().millisecondsSinceEpoch;
+  static int _lastNow = 0;
+  int _now() {
+    final ms = DateTime.now().millisecondsSinceEpoch;
+    _lastNow = ms > _lastNow ? ms : _lastNow + 1;
+    return _lastNow;
+  }
 
   void save() {
     final val = double.tryParse(amount) ?? 0;

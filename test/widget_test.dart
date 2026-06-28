@@ -320,4 +320,43 @@ void main() {
       expect(stats.deltaPct, closeTo((550 - 400) / 400, 0.001));
     });
   });
+
+  group('InsightsScreen smoke', () {
+    Widget buildApp(AppState app) => ChangeNotifierProvider<AppState>.value(
+          value: app,
+          child: MaterialApp(theme: buildTheme(false), home: const RootScaffold()),
+        );
+
+    testWidgets('renders all four cards with sample data', (tester) async {
+      tester.view.physicalSize = const Size(440, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final app = AppState()..loadSampleData();
+      app.set(() => app.screen = 'insights');
+      await tester.pumpWidget(buildApp(app));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Income vs spending'), findsOneWidget);
+      expect(find.text('Spending by category'), findsOneWidget);
+      expect(find.text('Daily spending'), findsOneWidget);
+    });
+
+    testWidgets('shows empty states with no data', (tester) async {
+      tester.view.physicalSize = const Size(440, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final app = AppState();
+      app.completeOnboarding(name: 'T', currencyCode: 'INR', themeMode: 'light');
+      app.set(() => app.screen = 'insights');
+      await tester.pumpWidget(buildApp(app));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Spending by category'), findsOneWidget);
+      expect(find.text('No spending recorded this month.'), findsNWidgets(2));
+    });
+  });
 }
