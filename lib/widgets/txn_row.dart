@@ -30,7 +30,7 @@ class TxnRow extends StatelessWidget {
     final amtColor = txn.isIncome ? Brand.green : c.ink;
 
     return InkWell(
-      onTap: () => app.openEdit(txn),
+      onTap: () => app.openDetail(txn),
       child: Container(
         decoration: divider
             ? BoxDecoration(border: Border(bottom: BorderSide(color: c.line2)))

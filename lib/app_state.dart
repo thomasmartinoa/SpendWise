@@ -23,14 +23,14 @@ const kPalette = [
 
 final kDefaultCats = <Category>[
   const Category(key: 'Food', label: 'Food', color: Color(0xFFE0533D)),
-  const Category(key: 'Travel', label: 'Travel', color: Color(0xFF2A6FDB)),
-  const Category(key: 'Entertainment', label: 'Fun', color: Color(0xFF7C3AED)),
-  const Category(key: 'AI Subs', label: 'AI Subs', color: Color(0xFF1F8A5B)),
+  const Category(key: 'Transport', label: 'Transport', color: Color(0xFF2A6FDB)),
   const Category(key: 'Shopping', label: 'Shopping', color: Color(0xFFD98A1F)),
   const Category(key: 'Bills', label: 'Bills', color: Color(0xFF5A6B7B)),
-  const Category(key: 'Education', label: 'Study', color: Color(0xFFC2497A)),
+  const Category(key: 'Health', label: 'Health', color: Color(0xFF1F8A5B)),
   const Category(key: 'Other', label: 'Other', color: Color(0xFF8A8A82)),
 ];
+
+const kDefaultSources = <String>['Salary', 'Other'];
 
 const kCurrencies = <Currency>[
   Currency(code: 'INR', symbol: '₹', locale: 'en_IN', label: 'Indian Rupee', rate: 1),
@@ -47,33 +47,47 @@ class AppState extends ChangeNotifier {
   AppState() {
     final now = _stripTime(DateTime.now());
     today = now;
-    String d(int n) => isoOffset(n);
     viewMonth = monthKey(iso(now));
-    transactions = [
-      Txn(id: 1, date: d(0), type: 'expense', category: 'Travel', title: 'Metro to college', amount: 40),
-      Txn(id: 2, date: d(0), type: 'expense', category: 'Food', title: 'Fried rice lunch', amount: 100, split: const Split(total: 400, count: 4)),
-      Txn(id: 3, date: d(1), type: 'expense', category: 'AI Subs', title: 'ChatGPT Plus', amount: 1650, recurring: true),
-      Txn(id: 4, date: d(1), type: 'expense', category: 'Entertainment', title: 'Movie ticket', amount: 250),
-      Txn(id: 5, date: d(3), type: 'expense', category: 'Shopping', title: 'Groceries', amount: 480),
-      Txn(id: 6, date: d(3), type: 'expense', category: 'Travel', title: 'Metro home', amount: 40),
-      Txn(id: 7, date: d(4), type: 'expense', category: 'Food', title: 'Group lunch', amount: 120, split: const Split(total: 480, count: 4)),
-      Txn(id: 8, date: d(5), type: 'expense', category: 'Education', title: 'Notebooks', amount: 90),
-    ];
-    income = [
-      Txn(id: 101, date: d(12), type: 'income', category: 'Freelance', title: 'Freelance project', amount: 3500),
-      Txn(id: 102, date: d(22), type: 'income', category: 'Pocket money', title: 'From parents', amount: 5000),
-      Txn(id: 103, date: d(26), type: 'income', category: 'Salary', title: 'Monthly salary', amount: 18000, recurring: true),
-    ];
-    recurring = [
-      const Recurring(id: 301, type: 'expense', category: 'AI Subs', title: 'ChatGPT Plus', amount: 1650),
-      const Recurring(id: 302, type: 'income', category: 'Salary', title: 'Monthly salary', amount: 18000),
-    ];
+    // New users start empty — default categories + sources are kept (below) so
+    // the app is usable immediately, but no fake transactions/income/recurring.
+    transactions = [];
+    income = [];
+    recurring = [];
     entryDate = iso(today);
+  }
+
+  /// Injects the original prototype demo dataset on demand (Settings → Load
+  /// sample data). Not called on boot.
+  void loadSampleData() {
+    String d(int n) => isoOffset(n);
+    _commit(() {
+      transactions = [
+        Txn(id: 1, date: d(0), type: 'expense', category: 'Travel', title: 'Metro to college', amount: 40),
+        Txn(id: 2, date: d(0), type: 'expense', category: 'Food', title: 'Fried rice lunch', amount: 100, split: const Split(total: 400, count: 4)),
+        Txn(id: 3, date: d(1), type: 'expense', category: 'AI Subs', title: 'ChatGPT Plus', amount: 1650, recurring: true),
+        Txn(id: 4, date: d(1), type: 'expense', category: 'Entertainment', title: 'Movie ticket', amount: 250),
+        Txn(id: 5, date: d(3), type: 'expense', category: 'Shopping', title: 'Groceries', amount: 480),
+        Txn(id: 6, date: d(3), type: 'expense', category: 'Travel', title: 'Metro home', amount: 40),
+        Txn(id: 7, date: d(4), type: 'expense', category: 'Food', title: 'Group lunch', amount: 120, split: const Split(total: 480, count: 4)),
+        Txn(id: 8, date: d(5), type: 'expense', category: 'Education', title: 'Notebooks', amount: 90),
+      ];
+      income = [
+        Txn(id: 101, date: d(12), type: 'income', category: 'Freelance', title: 'Freelance project', amount: 3500),
+        Txn(id: 102, date: d(22), type: 'income', category: 'Pocket money', title: 'From parents', amount: 5000),
+        Txn(id: 103, date: d(26), type: 'income', category: 'Salary', title: 'Monthly salary', amount: 18000, recurring: true),
+      ];
+      recurring = [
+        const Recurring(id: 301, type: 'expense', category: 'AI Subs', title: 'ChatGPT Plus', amount: 1650),
+        const Recurring(id: 302, type: 'income', category: 'Salary', title: 'Monthly salary', amount: 18000),
+      ];
+      screen = 'home';
+    });
   }
 
   // ---- navigation / ui state
   String screen = 'home';
   bool entryOpen = false;
+  Txn? detailTxn; // non-null while the read-only detail sheet is open
   String entryMode = 'expense';
   int? editingId;
 
@@ -88,9 +102,16 @@ class AppState extends ChangeNotifier {
   bool recurringOn = false;
 
   // ---- preferences
-  bool dark = false;
+  String themeMode = 'system'; // 'system' | 'light' | 'dark'
   String currencyCode = 'INR';
-  String name = 'You';
+  String name = '';
+  bool onboardingComplete = false;
+
+  ThemeMode get materialThemeMode => switch (themeMode) {
+        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
+        _ => ThemeMode.system,
+      };
 
   // ---- browsing state
   late String viewMonth;
@@ -102,7 +123,7 @@ class AppState extends ChangeNotifier {
 
   // ---- data
   List<Category> cats = kDefaultCats.map((c) => c).toList();
-  List<String> sources = ['Salary', 'Pocket money', 'Freelance'];
+  List<String> sources = List<String>.from(kDefaultSources);
   late List<Txn> transactions;
   late List<Txn> income;
   late List<Recurring> recurring;
@@ -142,8 +163,14 @@ class AppState extends ChangeNotifier {
             .toList();
       }
       if (d['currency'] != null) currencyCode = d['currency'] as String;
-      if (d['theme'] != null) dark = d['theme'] == 'dark';
+      // 'theme' is now 'system'|'light'|'dark'; legacy 'light'/'dark' migrate
+      // as-is, anything else falls back to 'system'.
+      if (d['theme'] is String) {
+        final t = d['theme'] as String;
+        themeMode = (t == 'light' || t == 'dark') ? t : 'system';
+      }
       if (d['name'] != null) name = d['name'] as String;
+      if (d['onboarded'] == true) onboardingComplete = true;
     } catch (_) {/* ignore corrupt store */}
     notifyListeners();
   }
@@ -160,11 +187,45 @@ class AppState extends ChangeNotifier {
           'sources': sources,
           'recurring': recurring.map((r) => r.toJson()).toList(),
           'currency': currencyCode,
-          'theme': dark ? 'dark' : 'light',
+          'theme': themeMode,
           'name': name,
+          'onboarded': onboardingComplete,
         }),
       );
     } catch (_) {}
+  }
+
+  /// Marks first-run setup complete and stores the chosen preferences.
+  void completeOnboarding({
+    required String name,
+    required String currencyCode,
+    required String themeMode,
+  }) =>
+      _commit(() {
+        this.name = name.trim().isEmpty ? 'You' : name.trim();
+        this.currencyCode = currencyCode;
+        this.themeMode = themeMode;
+        onboardingComplete = true;
+        screen = 'home';
+      });
+
+  /// Wipes all data + preferences and returns the user to onboarding.
+  Future<void> resetAll() async {
+    transactions = [];
+    income = [];
+    recurring = [];
+    cats = kDefaultCats.map((c) => c).toList();
+    sources = List<String>.from(kDefaultSources);
+    name = '';
+    currencyCode = 'INR';
+    themeMode = 'system';
+    onboardingComplete = false;
+    screen = 'home';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_storeKey);
+    } catch (_) {}
+    notifyListeners();
   }
 
   /// Apply a mutation, persist, and notify listeners — the equivalent of the
@@ -232,8 +293,10 @@ class AppState extends ChangeNotifier {
 
   // ============================ actions ============================
   void shiftMonth(int delta) {
+    // viewMonth months are 1-based (e.g. '2026-06'); DateTime months are also
+    // 1-based, so add delta directly — DateTime normalises year rollover.
     final p = viewMonth.split('-').map(int.parse).toList();
-    final d = DateTime(p[0], p[1] - 1 + delta, 1);
+    final d = DateTime(p[0], p[1] + delta, 1);
     _commit(() => viewMonth = '${d.year}-${_pad(d.month)}');
   }
 
@@ -274,6 +337,18 @@ class AppState extends ChangeNotifier {
         entryOpen = false;
         editingId = null;
       });
+
+  /// Opens the read-only transaction detail sheet.
+  void openDetail(Txn t) => _commit(() => detailTxn = t);
+  void closeDetail() => _commit(() => detailTxn = null);
+
+  /// From the detail sheet's "Edit" button: close detail and open the editor.
+  void editFromDetail() {
+    final t = detailTxn;
+    if (t == null) return;
+    detailTxn = null;
+    openEdit(t);
+  }
 
   void press(String d) => _commit(() {
         var a = amount;
@@ -357,6 +432,26 @@ class AppState extends ChangeNotifier {
     });
   }
 
+  /// The entry currently being edited, if any (used to support undo on delete).
+  Txn? get editingTxn {
+    final id = editingId;
+    if (id == null) return null;
+    for (final t in transactions) {
+      if (t.id == id) return t;
+    }
+    for (final t in income) {
+      if (t.id == id) return t;
+    }
+    return null;
+  }
+
+  /// Deletes a specific entry (used by the detail sheet) and closes it.
+  void removeTxn(Txn t) => _commit(() {
+        transactions = transactions.where((x) => x.id != t.id).toList();
+        income = income.where((x) => x.id != t.id).toList();
+        detailTxn = null;
+      });
+
   void remove() {
     final id = editingId;
     if (id == null) return;
@@ -367,6 +462,15 @@ class AppState extends ChangeNotifier {
       editingId = null;
     });
   }
+
+  /// Re-inserts a previously removed entry (the Undo action).
+  void restore(Txn t) => _commit(() {
+        if (t.isIncome) {
+          income = [t, ...income];
+        } else {
+          transactions = [t, ...transactions];
+        }
+      });
 
   void logRecurring(Recurring r) {
     final id = _now();

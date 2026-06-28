@@ -4,6 +4,47 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../theme.dart';
 
+/// Themed yes/no confirmation dialog. Returns true only if confirmed.
+Future<bool> confirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  String confirmLabel = 'Confirm',
+  String cancelLabel = 'Cancel',
+  bool danger = false,
+}) async {
+  final c = AppColors.of(context);
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: c.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text(title,
+          style: manrope(size: 17, weight: FontWeight.w800, color: c.ink)),
+      content: Text(message,
+          style: manrope(
+              size: 14, weight: FontWeight.w600, color: c.ink2, height: 1.45)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text(cancelLabel,
+              style:
+                  manrope(size: 14, weight: FontWeight.w700, color: c.ink2)),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: Text(confirmLabel,
+              style: manrope(
+                  size: 14,
+                  weight: FontWeight.w800,
+                  color: danger ? Brand.accent : Brand.green)),
+        ),
+      ],
+    ),
+  );
+  return result ?? false;
+}
+
 /// Small circular ‹ / › nav button used by the month switcher.
 class ArrowButton extends StatelessWidget {
   final String glyph;

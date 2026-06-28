@@ -355,7 +355,20 @@ class _SheetBody extends StatelessWidget {
           children: [
             if (editing) ...[
               GestureDetector(
-                onTap: app.remove,
+                onTap: () {
+                  final removed = app.editingTxn;
+                  app.remove();
+                  if (removed != null) {
+                    ScaffoldMessenger.of(context)
+                      ..clearSnackBars()
+                      ..showSnackBar(SnackBar(
+                        content: const Text('Entry deleted'),
+                        action: SnackBarAction(
+                            label: 'Undo',
+                            onPressed: () => app.restore(removed)),
+                      ));
+                  }
+                },
                 child: Container(
                   width: 54,
                   height: 54,

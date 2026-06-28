@@ -38,6 +38,17 @@ class AppColors {
       AppColors(Theme.of(context).brightness == Brightness.dark);
 }
 
+/// Steps every requested weight down one notch so the UI reads lighter
+/// overall (w800→w700, w700→w600, w600→w500). Centralised here so the whole
+/// app lightens without touching every call site.
+final _soften = <FontWeight, FontWeight>{
+  FontWeight.w900: FontWeight.w800,
+  FontWeight.w800: FontWeight.w700,
+  FontWeight.w700: FontWeight.w600,
+  FontWeight.w600: FontWeight.w500,
+  FontWeight.w500: FontWeight.w400,
+};
+
 /// A few shared text styles built on Manrope.
 TextStyle manrope({
   double size = 14,
@@ -48,7 +59,7 @@ TextStyle manrope({
 }) =>
     GoogleFonts.manrope(
       fontSize: size,
-      fontWeight: weight,
+      fontWeight: _soften[weight] ?? weight,
       color: color,
       letterSpacing: letterSpacing,
       height: height,

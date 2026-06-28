@@ -48,15 +48,24 @@ class SettingsScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _BareField(
-                      value: app.name,
-                      hint: 'Your name',
-                      style: manrope(
-                          size: 17, weight: FontWeight.w800, color: c.ink),
-                      onChanged: (v) => app.set(() => app.name = v),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _BareField(
+                            value: app.name,
+                            hint: 'Your name',
+                            style: manrope(
+                                size: 17,
+                                weight: FontWeight.w800,
+                                color: c.ink),
+                            onChanged: (v) => app.set(() => app.name = v),
+                          ),
+                        ),
+                        Icon(Icons.edit_outlined, size: 17, color: c.ink2),
+                      ],
                     ),
                     const SizedBox(height: 1),
-                    Text('Personal tracking · ${cur.symbol} ${cur.code}',
+                    Text('Tap your name to edit · ${cur.symbol} ${cur.code}',
                         style: manrope(
                             size: 13,
                             weight: FontWeight.w600,
@@ -79,69 +88,63 @@ class SettingsScreen extends StatelessWidget {
             children: [
               _Segment(
                   label: '☀ Light',
-                  selected: !app.dark,
-                  onTap: () => app.set(() => app.dark = false)),
-              const SizedBox(width: 8),
+                  selected: app.themeMode == 'light',
+                  onTap: () => app.set(() => app.themeMode = 'light')),
+              const SizedBox(width: 6),
               _Segment(
                   label: '☾ Dark',
-                  selected: app.dark,
-                  onTap: () => app.set(() => app.dark = true)),
+                  selected: app.themeMode == 'dark',
+                  onTap: () => app.set(() => app.themeMode = 'dark')),
+              const SizedBox(width: 6),
+              _Segment(
+                  label: '◐ System',
+                  selected: app.themeMode == 'system',
+                  onTap: () => app.set(() => app.themeMode = 'system')),
             ],
           ),
         ),
         const SizedBox(height: 24),
 
-        // ---- currency
+        // ---- currency (collapsed to the selected one; tap to change)
         const SectionLabel('Currency'),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: c.card,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: c.line),
-          ),
-          child: Column(
-            children: [
-              ...kCurrencies.map((cu) {
-                final sel = app.currencyCode == cu.code;
-                return InkWell(
-                  onTap: () => app.setCurrency(cu.code),
-                  child: Container(
-                    decoration: BoxDecoration(
-                        border: Border(bottom: BorderSide(color: c.line2))),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    child: Row(
-                      children: [
-                        _MiniBox(text: cu.symbol, bg: c.key, fg: c.ink),
-                        const SizedBox(width: 13),
-                        Expanded(
-                          child: Text(cu.label,
-                              style: manrope(
-                                  size: 14.5,
-                                  weight: FontWeight.w700,
-                                  color: c.ink)),
-                        ),
-                        Text(sel ? '✓' : '',
-                            style: manrope(
-                                size: 18,
-                                weight: FontWeight.w800,
-                                color: Brand.accent)),
-                      ],
-                    ),
+        InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => _showCurrencyPicker(context, app),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: c.card,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: c.line),
+            ),
+            child: Row(
+              children: [
+                _MiniBox(text: cur.symbol, bg: c.key, fg: c.ink),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(cur.label,
+                          style: manrope(
+                              size: 14.5,
+                              weight: FontWeight.w700,
+                              color: c.ink)),
+                      Text('Converts all amounts at indicative rates',
+                          style: manrope(
+                              size: 11.5,
+                              weight: FontWeight.w600,
+                              color: c.ink2)),
+                    ],
                   ),
-                );
-              }),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 10, 0, 12),
-                child: Text(
-                    'Switching converts every amount at indicative rates.',
+                ),
+                Text(cur.code,
                     style: manrope(
-                        size: 11,
-                        weight: FontWeight.w600,
-                        color: c.ink2,
-                        height: 1.45)),
-              ),
-            ],
+                        size: 13, weight: FontWeight.w700, color: c.ink2)),
+                Icon(Icons.expand_more, size: 22, color: c.ink2),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -397,6 +400,14 @@ class SettingsScreen extends StatelessWidget {
                 sub: 'restore from a backup',
                 divider: false,
                 onTap: () async {
+                  final go = await confirmDialog(
+                    context,
+                    title: 'Import backup?',
+                    message:
+                        'Importing a CSV replaces all of your current transactions and income. This cannot be undone.',
+                    confirmLabel: 'Import',
+                  );
+                  if (!go || !context.mounted) return;
                   final ok = await importCsv(app);
                   if (ok != null && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -411,13 +422,76 @@ class SettingsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 22),
         Center(
-          child: Text('Expense Tracker · v1.2',
+          child: Text('SpendWise · v1.0',
               style:
                   manrope(size: 12, weight: FontWeight.w600, color: c.ink2)),
         ),
       ],
     );
   }
+}
+
+/// Bottom-sheet currency picker (replaces the always-expanded list).
+void _showCurrencyPicker(BuildContext context, AppState app) {
+  final c = AppColors.of(context);
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: c.card,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 38,
+            height: 5,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+                color: c.line, borderRadius: BorderRadius.circular(3)),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Currency',
+                  style:
+                      manrope(size: 17, weight: FontWeight.w800, color: c.ink)),
+            ),
+          ),
+          ...kCurrencies.map((cu) {
+            final sel = app.currencyCode == cu.code;
+            return InkWell(
+              onTap: () {
+                app.setCurrency(cu.code);
+                Navigator.of(ctx).pop();
+              },
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                child: Row(
+                  children: [
+                    _MiniBox(text: cu.symbol, bg: c.key, fg: c.ink),
+                    const SizedBox(width: 13),
+                    Expanded(
+                      child: Text(cu.label,
+                          style: manrope(
+                              size: 14.5,
+                              weight: FontWeight.w700,
+                              color: c.ink)),
+                    ),
+                    if (sel)
+                      const Icon(Icons.check, color: Brand.accent, size: 20),
+                  ],
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 10),
+        ],
+      ),
+    ),
+  );
 }
 
 class _Segment extends StatelessWidget {

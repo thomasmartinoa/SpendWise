@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'app_state.dart';
 import 'root.dart';
+import 'screens/onboarding_screen.dart';
 import 'theme.dart';
 
 Future<void> main() async {
@@ -22,14 +23,16 @@ class SpendWiseApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = context.watch<AppState>().dark;
+    final app = context.watch<AppState>();
     return MaterialApp(
       title: 'SpendWise',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(false),
       darkTheme: buildTheme(true),
-      themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-      home: const RootScaffold(),
+      themeMode: app.materialThemeMode,
+      home: app.onboardingComplete
+          ? const RootScaffold()
+          : const OnboardingScreen(),
     );
   }
 }
