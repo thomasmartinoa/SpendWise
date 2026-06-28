@@ -43,8 +43,8 @@ class AppColors {
 /// drops body text to medium/regular. Centralised so the whole app lightens
 /// without touching every call site.
 final _soften = <FontWeight, FontWeight>{
-  FontWeight.w900: FontWeight.w700,
-  FontWeight.w800: FontWeight.w600,
+  FontWeight.w900: FontWeight.w600,
+  FontWeight.w800: FontWeight.w500,
   FontWeight.w700: FontWeight.w600,
   FontWeight.w600: FontWeight.w500,
   FontWeight.w500: FontWeight.w400,
