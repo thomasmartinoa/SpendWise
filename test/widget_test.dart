@@ -1,30 +1,72 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:spendwise/main.dart';
+import 'package:spendwise/app_state.dart';
+import 'package:spendwise/root.dart';
+import 'package:spendwise/theme.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  setUp(() => SharedPreferences.setMockInitialValues({}));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  group('AppState logic', () {
+    test('keypad press builds the amount string', () {
+      final app = AppState();
+      app.press('1');
+      app.press('2');
+      app.press('.');
+      app.press('5');
+      expect(app.amount, '12.5');
+      app.press('back');
+      expect(app.amount, '12.');
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    test('split expense records only the per-person share', () {
+      final app = AppState();
+      app.openEntry('expense', true);
+      app.splitCount = 4;
+      app.amount = '400';
+      final before = app.transactions.length;
+      app.save();
+      expect(app.transactions.length, before + 1);
+      final row = app.transactions.first;
+      expect(row.amount, 100); // 400 / 4
+      expect(row.split?.total, 400);
+      expect(row.split?.count, 4);
+    });
+
+    test('currency conversion scales stored amounts', () {
+      final app = AppState();
+      final inrSpent = app.monthSpent;
+      app.setCurrency('USD');
+      expect(app.currencyCode, 'USD');
+      // 0.012 rate => spent should shrink dramatically
+      expect(app.monthSpent < inrSpent, isTrue);
+    });
+
+    test('CSV round-trips transactions', () {
+      final app = AppState();
+      final csv = app.buildCsv();
+      final ok = app.importCsv(csv);
+      expect(ok, isTrue);
+      expect(app.transactions.isNotEmpty || app.income.isNotEmpty, isTrue);
+    });
+  });
+
+  testWidgets('App boots to the Home screen', (tester) async {
+    final app = AppState();
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AppState>.value(
+        value: app,
+        child: MaterialApp(
+          theme: buildTheme(false),
+          home: const RootScaffold(),
+        ),
+      ),
+    );
     await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Left to spend'.toUpperCase()), findsOneWidget);
+    expect(find.text('Recent activity'), findsOneWidget);
   });
 }
