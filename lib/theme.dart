@@ -38,12 +38,13 @@ class AppColors {
       AppColors(Theme.of(context).brightness == Brightness.dark);
 }
 
-/// Steps every requested weight down one notch so the UI reads lighter
-/// overall (w800→w700, w700→w600, w600→w500). Centralised here so the whole
-/// app lightens without touching every call site.
+/// Lightens the design's heavy weights so the UI reads cleaner. The original
+/// uses w800/w700 almost everywhere; this caps emphasis at semibold (w600) and
+/// drops body text to medium/regular. Centralised so the whole app lightens
+/// without touching every call site.
 final _soften = <FontWeight, FontWeight>{
-  FontWeight.w900: FontWeight.w800,
-  FontWeight.w800: FontWeight.w700,
+  FontWeight.w900: FontWeight.w700,
+  FontWeight.w800: FontWeight.w600,
   FontWeight.w700: FontWeight.w600,
   FontWeight.w600: FontWeight.w500,
   FontWeight.w500: FontWeight.w400,

@@ -16,45 +16,14 @@ class HomeScreen extends StatelessWidget {
     final recent = app.sortDesc([...app.transactions, ...app.income]).take(5).toList();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 6, 20, 116),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 116),
       children: [
         // header
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(app.greeting,
-                      style: manrope(
-                          size: 14, weight: FontWeight.w600, color: c.ink2)),
-                  const SizedBox(height: 2),
-                  const MonthSwitch(big: true),
-                ],
-              ),
-            ),
-            GestureDetector(
-              onTap: () => app.go('settings'),
-              child: Container(
-                width: 42,
-                height: 42,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: c.card,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: c.line),
-                ),
-                child: Text(app.nameInitial,
-                    style: manrope(
-                        size: 15,
-                        weight: FontWeight.w800,
-                        color: Brand.accent)),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
+        Text(app.greeting,
+            style: manrope(size: 14, weight: FontWeight.w600, color: c.ink2)),
+        const SizedBox(height: 8),
+        const MonthSwitch(big: true),
+        const SizedBox(height: 20),
 
         // hero
         Container(
