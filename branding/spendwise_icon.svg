@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="SpendWise">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#EE6A4E"/>
+      <stop offset="0.5" stop-color="#E0533D"/>
+      <stop offset="1" stop-color="#C53F29"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="0.3" cy="0.16" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.20"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="232" fill="url(#tile)"/>
+  <rect width="1024" height="1024" rx="232" fill="url(#sheen)"/>
+
+  <!-- simple bold "S" monogram -->
+  <path d="M 648 360
+           C 648 312 596 286 524 286
+           C 442 286 392 330 392 388
+           C 392 446 438 474 524 496
+           C 610 518 656 546 656 606
+           C 656 666 600 712 520 712
+           C 446 712 392 684 388 628"
+        fill="none" stroke="#ffffff" stroke-width="96"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
