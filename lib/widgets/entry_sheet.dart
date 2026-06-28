@@ -301,39 +301,60 @@ class _SheetBody extends StatelessWidget {
 
         // recurring
         const SizedBox(height: 10),
-        GestureDetector(
-          onTap: () => app.set(() => app.recurringOn = !app.recurringOn),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-            decoration: BoxDecoration(
-              color: app.recurringOn ? Brand.tintBg : c.field,
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(
-                  color: app.recurringOn ? Brand.accent : c.line, width: 1.5),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('Repeat monthly',
-                          style: manrope(
-                              size: 14,
-                              weight: FontWeight.w700,
-                              color: app.recurringOn ? Brand.tintInk : c.ink)),
-                      Text('save as a recurring item',
-                          style: manrope(
-                              size: 11.5,
-                              weight: FontWeight.w600,
-                              color: c.ink2)),
-                    ],
-                  ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+          decoration: BoxDecoration(
+            color: app.recurringOn ? Brand.tintBg : c.field,
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(
+                color: app.recurringOn ? Brand.accent : c.line, width: 1.5),
+          ),
+          child: Column(
+            children: [
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => app.set(() => app.recurringOn = !app.recurringOn),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Repeat',
+                              style: manrope(
+                                  size: 14,
+                                  weight: FontWeight.w700,
+                                  color:
+                                      app.recurringOn ? Brand.tintInk : c.ink)),
+                          Text('auto-adds each time it comes due',
+                              style: manrope(
+                                  size: 11.5,
+                                  weight: FontWeight.w600,
+                                  color: c.ink2)),
+                        ],
+                      ),
+                    ),
+                    _Toggle(on: app.recurringOn),
+                  ],
                 ),
-                _Toggle(on: app.recurringOn),
+              ),
+              if (app.recurringOn) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    for (final f in kFreqs) ...[
+                      _FreqChip(
+                        label: kFreqLabel[f]!,
+                        selected: app.recurEverySel == f,
+                        onTap: () => app.set(() => app.recurEverySel = f),
+                      ),
+                      if (f != kFreqs.last) const SizedBox(width: 7),
+                    ],
+                  ],
+                ),
               ],
-            ),
+            ],
           ),
         ),
 
@@ -571,6 +592,40 @@ class _PeopleStepper extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// One interval pill (Day / Week / Month / Year) in the recurring selector.
+class _FreqChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _FreqChip(
+      {required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? Brand.accent : c.card,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+                color: selected ? Brand.accent : c.line, width: 1.5),
+          ),
+          child: Text(label,
+              style: manrope(
+                  size: 12.5,
+                  weight: FontWeight.w700,
+                  color: selected ? Colors.white : c.ink)),
+        ),
       ),
     );
   }

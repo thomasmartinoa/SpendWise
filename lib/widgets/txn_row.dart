@@ -20,7 +20,9 @@ class TxnRow extends StatelessWidget {
 
     var sub = txn.isIncome ? txn.category : cat.label;
     if (txn.split != null) sub = '${cat.label} · split ${txn.split!.count} ways';
-    if (txn.recurring) sub += ' · ↻ monthly';
+    if (txn.recurring) {
+      sub += ' · ↻ ${kFreqAdverb[txn.recurEvery] ?? 'monthly'}';
+    }
 
     final initial = txn.isIncome
         ? '+'

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
+import '../csv_io.dart';
 import '../theme.dart';
 import '../widgets/logo_mark.dart';
 import '../widgets/ui.dart';
@@ -45,6 +46,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _skipToSetup() => _controller.animateToPage(_last,
       duration: const Duration(milliseconds: 320), curve: Curves.easeOut);
+
+  /// Restore from a CSV backup during first-run, then enter the app.
+  Future<void> _importBackup() async {
+    final app = context.read<AppState>();
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await importCsv(app);
+    if (ok == null || !mounted) return; // cancelled
+    if (ok) {
+      app.completeOnboarding(
+          name: _name, currencyCode: _currency, themeMode: _theme);
+    } else {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Could not read that file.')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +121,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         onName: (v) => _name = v,
                         onCurrency: (v) => setState(() => _currency = v),
                         onTheme: (v) => setState(() => _theme = v),
+                        onImport: _importBackup,
                       ),
                     ],
                   ),
@@ -246,6 +263,7 @@ class _FeaturePage extends StatelessWidget {
 class _SetupPage extends StatelessWidget {
   final String name, currency, theme;
   final ValueChanged<String> onName, onCurrency, onTheme;
+  final VoidCallback onImport;
   const _SetupPage({
     required this.name,
     required this.currency,
@@ -253,6 +271,7 @@ class _SetupPage extends StatelessWidget {
     required this.onName,
     required this.onCurrency,
     required this.onTheme,
+    required this.onImport,
   });
 
   @override
@@ -321,6 +340,42 @@ class _SetupPage extends StatelessWidget {
                 const SizedBox(width: 6),
                 _ThemeSeg(label: '◐ System', value: 'system', selected: theme, onTap: onTheme),
               ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // restore from a previous backup
+          Center(
+            child: GestureDetector(
+              onTap: onImport,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: c.line, width: 1.5),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.upload_file_outlined, size: 18, color: c.ink2),
+                    const SizedBox(width: 8),
+                    Text('Import from CSV backup',
+                        style: manrope(
+                            size: 13.5,
+                            weight: FontWeight.w700,
+                            color: c.ink)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text('Already use SpendWise? Restore your data.',
+                  style: manrope(
+                      size: 12, weight: FontWeight.w600, color: c.ink2)),
             ),
           ),
         ],

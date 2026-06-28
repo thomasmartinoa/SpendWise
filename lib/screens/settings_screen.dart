@@ -339,7 +339,7 @@ class SettingsScreen extends StatelessWidget {
                                         weight: FontWeight.w700,
                                         color: c.ink)),
                                 Text(
-                                    '${isInc ? 'Income' : cc.label} · ${app.fmt(r.amount)}/mo',
+                                    '${isInc ? 'Income' : cc.label} · ${app.fmt(r.amount)}${kFreqShort[r.freq] ?? '/mo'}',
                                     style: manrope(
                                         size: 12,
                                         weight: FontWeight.w600,

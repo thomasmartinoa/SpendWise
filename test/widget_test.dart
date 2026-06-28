@@ -82,6 +82,60 @@ void main() {
       expect(app.transactions.length, 1);
     });
 
+    test('CSV import reconstructs categories and recurring templates', () {
+      final app = AppState();
+      // a recurring monthly Food expense
+      app.openEntry('expense', false);
+      app.recurringOn = true;
+      app.recurEverySel = 'month';
+      app.cat = 'Food';
+      app.amount = '500';
+      app.save();
+      // an expense under a custom category
+      app.set(() => app.newCatName = 'Gym');
+      app.addCat();
+      app.openEntry('expense', false);
+      app.cat = 'Gym';
+      app.amount = '200';
+      app.save();
+
+      final csv = app.buildCsv();
+
+      final restored = AppState();
+      expect(restored.importCsv(csv), isTrue);
+      expect(restored.cats.any((c) => c.key == 'Gym'), isTrue);
+      expect(restored.recurring, isNotEmpty);
+      expect(restored.recurring.first.freq, 'month');
+    });
+
+    test('recurring auto-posts due occurrences on app open', () async {
+      final past = DateTime.now().subtract(const Duration(days: 40));
+      String two(int n) => n.toString().padLeft(2, '0');
+      final anchor = '${past.year}-${two(past.month)}-${two(past.day)}';
+      SharedPreferences.setMockInitialValues({
+        'exptrack_v3': jsonEncode({
+          'transactions': <dynamic>[],
+          'income': <dynamic>[],
+          'recurring': [
+            {
+              'id': 1,
+              'type': 'expense',
+              'category': 'Bills',
+              'title': 'Rent',
+              'amount': 1000,
+              'freq': 'week',
+              'anchor': anchor,
+            }
+          ],
+          'onboarded': true,
+        }),
+      });
+      final app = AppState();
+      await app.load();
+      expect(app.transactions, isNotEmpty); // weekly occurrences backfilled
+      expect(app.transactions.every((t) => t.recurring), isTrue);
+    });
+
     test('editFromDetail closes the detail and opens the editor', () {
       final app = AppState()..loadSampleData();
       app.openDetail(app.transactions.first);
