@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:spendwise/app_state.dart';
 import 'package:spendwise/main.dart';
+import 'package:spendwise/models.dart';
 import 'package:spendwise/root.dart';
 import 'package:spendwise/screens/onboarding_screen.dart';
 import 'package:spendwise/theme.dart';
@@ -236,5 +237,28 @@ void main() {
     expect(app.detailTxn, isNotNull); // detail open, not the editor
     expect(app.entryOpen, isFalse);
     expect(find.byType(TransactionDetail), findsOneWidget);
+  });
+
+  group('Insights value types', () {
+    test('CatSlice constructs correctly', () {
+      const s = CatSlice(
+          key: 'Food', label: 'Food', color: Color(0xFFE0533D), amount: 500, pct: 0.5);
+      expect(s.amount, 500);
+      expect(s.pct, 0.5);
+    });
+
+    test('MonthTotals constructs correctly', () {
+      const m = MonthTotals(
+          monthKey: '2026-06', label: 'Jun', income: 20000, spent: 5000);
+      expect(m.income - m.spent, 15000);
+    });
+
+    test('InsightStats constructs correctly', () {
+      const s = InsightStats(
+          savingsRate: 0.75, avgPerDay: 167, biggestExpense: 2000,
+          prevMonthSpent: 4000, deltaPct: 0.25);
+      expect(s.savingsRate, 0.75);
+      expect(s.deltaPct, 0.25);
+    });
   });
 }

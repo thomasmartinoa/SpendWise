@@ -162,6 +162,52 @@ class Recurring {
       );
 }
 
+/// Aggregated category spending slice for one month (Insights donut).
+class CatSlice {
+  final String key;
+  final String label;
+  final Color color;
+  final int amount;
+  final double pct; // 0..1 fraction of total monthly spending
+  const CatSlice({
+    required this.key,
+    required this.label,
+    required this.color,
+    required this.amount,
+    required this.pct,
+  });
+}
+
+/// Income vs spent totals for one calendar month (Insights trend chart).
+class MonthTotals {
+  final String monthKey; // 'YYYY-MM'
+  final String label;   // 3-letter abbreviation, e.g. 'Jun'
+  final int income;
+  final int spent;
+  const MonthTotals({
+    required this.monthKey,
+    required this.label,
+    required this.income,
+    required this.spent,
+  });
+}
+
+/// Derived summary stats for one calendar month (Insights summary card).
+class InsightStats {
+  final double savingsRate; // fraction 0..1 (negative if overspent)
+  final int avgPerDay;      // average daily spend (integer amount in local currency)
+  final int biggestExpense; // largest single expense amount that month
+  final int prevMonthSpent; // total spent in the immediately preceding month
+  final double deltaPct;    // (spent - prevSpent) / prevSpent; positive = more than last month
+  const InsightStats({
+    required this.savingsRate,
+    required this.avgPerDay,
+    required this.biggestExpense,
+    required this.prevMonthSpent,
+    required this.deltaPct,
+  });
+}
+
 int _colorFrom(dynamic v) {
   if (v is int) return v;
   if (v is String) {
