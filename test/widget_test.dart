@@ -261,4 +261,63 @@ void main() {
       expect(s.deltaPct, 0.25);
     });
   });
+
+  group('AppState aggregation helpers', () {
+    late AppState app;
+    setUp(() {
+      app = AppState();
+      app.set(() {
+        app.transactions = [
+          Txn(id: 1, date: '2026-06-01', type: 'expense', category: 'Food', title: 'Lunch', amount: 300),
+          Txn(id: 2, date: '2026-06-01', type: 'expense', category: 'Food', title: 'Dinner', amount: 200),
+          Txn(id: 3, date: '2026-06-15', type: 'expense', category: 'Transport', title: 'Bus', amount: 50),
+          Txn(id: 4, date: '2026-05-10', type: 'expense', category: 'Food', title: 'May lunch', amount: 400),
+        ];
+        app.income = [
+          Txn(id: 101, date: '2026-06-01', type: 'income', category: 'Salary', title: 'Pay', amount: 10000),
+        ];
+        app.viewMonth = '2026-06';
+      });
+    });
+
+    test('categoryBreakdown returns slices sorted desc', () {
+      final slices = app.categoryBreakdown('2026-06');
+      expect(slices.length, 2);
+      expect(slices.first.key, 'Food');
+      expect(slices.first.amount, 500);
+      expect(slices.last.key, 'Transport');
+      expect(slices.last.amount, 50);
+      expect(slices.fold(0.0, (a, s) => a + s.pct), closeTo(1.0, 0.001));
+    });
+
+    test('categoryBreakdown returns empty when no expenses', () {
+      expect(app.categoryBreakdown('2025-01'), isEmpty);
+    });
+
+    test('monthlyTotals returns N months ending at viewMonth', () {
+      final totals = app.monthlyTotals(months: 2);
+      expect(totals.length, 2);
+      expect(totals.last.monthKey, '2026-06');
+      expect(totals.last.spent, 550);
+      expect(totals.last.income, 10000);
+      expect(totals.first.monthKey, '2026-05');
+      expect(totals.first.spent, 400);
+    });
+
+    test('dailyTotals returns correct length and values', () {
+      final daily = app.dailyTotals('2026-06');
+      expect(daily.length, 30);   // June has 30 days
+      expect(daily[0], 500);      // day 1: 300+200
+      expect(daily[14], 50);      // day 15
+      expect(daily[2], 0);        // day 3: no spending
+    });
+
+    test('insightStats computes correctly', () {
+      final stats = app.insightStats('2026-06');
+      expect(stats.savingsRate, closeTo((10000 - 550) / 10000, 0.001));
+      expect(stats.biggestExpense, 300);
+      expect(stats.prevMonthSpent, 400);
+      expect(stats.deltaPct, closeTo((550 - 400) / 400, 0.001));
+    });
+  });
 }
