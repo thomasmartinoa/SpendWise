@@ -16,11 +16,18 @@ class CategoryDonutCard extends StatefulWidget {
 
 class _CategoryDonutCardState extends State<CategoryDonutCard> {
   int _touched = -1;
+  String _lastMonth = '';
 
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     final c = AppColors.of(context);
+    // Reset touch state when the user navigates to a different month so the
+    // wrong slice isn't highlighted in the new month's data.
+    if (app.viewMonth != _lastMonth) {
+      _lastMonth = app.viewMonth;
+      _touched = -1;
+    }
     final slices = app.categoryBreakdown(app.viewMonth);
 
     return Container(

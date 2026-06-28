@@ -32,7 +32,7 @@ class DailySpendingCard extends StatelessWidget {
           Text('Daily spending',
               style: manrope(size: 15, weight: FontWeight.w700, color: c.ink)),
           const SizedBox(height: 2),
-          Text('this month',
+          Text(app.monthName(app.viewMonth),
               style:
                   manrope(size: 11.5, weight: FontWeight.w600, color: c.ink2)),
           const SizedBox(height: 16),
