@@ -55,8 +55,12 @@ class SummaryStatsCard extends StatelessWidget {
             children: [
               _Cell(
                   label: 'Savings',
-                  value: '${(stats.savingsRate * 100).toStringAsFixed(0)}%',
-                  color: stats.savingsRate >= 0 ? Brand.green : Brand.accent),
+                  value: app.monthIncome == 0
+                      ? '—'
+                      : '${(stats.savingsRate * 100).toStringAsFixed(0)}%',
+                  color: app.monthIncome == 0
+                      ? null // neutral (ink) — no income logged yet
+                      : (stats.savingsRate >= 0 ? Brand.green : Brand.accent)),
               _Vline(),
               _Cell(label: 'Avg/day', value: app.fmt(stats.avgPerDay)),
               _Vline(),
