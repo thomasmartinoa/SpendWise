@@ -57,6 +57,7 @@ class Txn {
   final int amount;
   final Split? split;
   final bool recurring;
+  final String? recurEvery; // 'day' | 'week' | 'month' | 'year' when recurring
 
   const Txn({
     required this.id,
@@ -67,6 +68,7 @@ class Txn {
     required this.amount,
     this.split,
     this.recurring = false,
+    this.recurEvery,
   });
 
   bool get isIncome => type == 'income';
@@ -80,6 +82,7 @@ class Txn {
         amount: amount ?? this.amount,
         split: clearSplit ? null : (split ?? this.split),
         recurring: recurring,
+        recurEvery: recurEvery,
       );
 
   Map<String, dynamic> toJson() => {
@@ -91,6 +94,7 @@ class Txn {
         'amount': amount,
         'split': split?.toJson(),
         'recurring': recurring,
+        'recurEvery': recurEvery,
       };
 
   factory Txn.fromJson(Map<String, dynamic> j) => Txn(
@@ -104,6 +108,7 @@ class Txn {
             ? null
             : Split.fromJson((j['split'] as Map).cast<String, dynamic>()),
         recurring: j['recurring'] == true,
+        recurEvery: j['recurEvery'] as String?,
       );
 }
 
@@ -114,13 +119,27 @@ class Recurring {
   final String category;
   final String title;
   final int amount;
+  final String freq; // 'day' | 'week' | 'month' | 'year'
+  final String anchor; // YYYY-MM-DD of the most recent posted occurrence
   const Recurring({
     required this.id,
     required this.type,
     required this.category,
     required this.title,
     required this.amount,
+    this.freq = 'month',
+    this.anchor = '',
   });
+
+  Recurring copyWith({String? anchor}) => Recurring(
+        id: id,
+        type: type,
+        category: category,
+        title: title,
+        amount: amount,
+        freq: freq,
+        anchor: anchor ?? this.anchor,
+      );
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -128,6 +147,8 @@ class Recurring {
         'category': category,
         'title': title,
         'amount': amount,
+        'freq': freq,
+        'anchor': anchor,
       };
 
   factory Recurring.fromJson(Map<String, dynamic> j) => Recurring(
@@ -136,6 +157,8 @@ class Recurring {
         category: j['category'] as String,
         title: (j['title'] ?? '') as String,
         amount: (j['amount'] as num).round(),
+        freq: (j['freq'] as String?) ?? 'month',
+        anchor: (j['anchor'] as String?) ?? '',
       );
 }
 

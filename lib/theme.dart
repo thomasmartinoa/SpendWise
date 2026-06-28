@@ -80,5 +80,7 @@ ThemeData buildTheme(bool dark) {
     ),
     splashFactory: NoSplash.splashFactory,
     highlightColor: Colors.transparent,
+    // Floating snackbars sit above the docked FAB instead of pushing it up.
+    snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
   );
 }

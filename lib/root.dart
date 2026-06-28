@@ -64,9 +64,20 @@ class RootScaffold extends StatelessWidget {
                 floatingActionButtonLocation:
                     FloatingActionButtonLocation.centerDocked,
               ),
+              // Overlays sit outside the Scaffold's Material, so wrap them in
+              // a transparent Material — otherwise their text renders with the
+              // yellow "missing Material" debug underline.
               if (app.detailTxn != null)
-                const Positioned.fill(child: TransactionDetail()),
-              if (app.entryOpen) const Positioned.fill(child: EntrySheet()),
+                const Positioned.fill(
+                  child: Material(
+                      type: MaterialType.transparency,
+                      child: TransactionDetail()),
+                ),
+              if (app.entryOpen)
+                const Positioned.fill(
+                  child: Material(
+                      type: MaterialType.transparency, child: EntrySheet()),
+                ),
             ],
           ),
         ),

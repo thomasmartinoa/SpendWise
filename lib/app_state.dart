@@ -32,6 +32,27 @@ final kDefaultCats = <Category>[
 
 const kDefaultSources = <String>['Salary', 'Other'];
 
+/// Recurrence intervals and their display strings.
+const kFreqs = <String>['day', 'week', 'month', 'year'];
+const kFreqAdverb = <String, String>{
+  'day': 'daily',
+  'week': 'weekly',
+  'month': 'monthly',
+  'year': 'yearly'
+};
+const kFreqShort = <String, String>{
+  'day': '/day',
+  'week': '/wk',
+  'month': '/mo',
+  'year': '/yr'
+};
+const kFreqLabel = <String, String>{
+  'day': 'Day',
+  'week': 'Week',
+  'month': 'Month',
+  'year': 'Year'
+};
+
 const kCurrencies = <Currency>[
   Currency(code: 'INR', symbol: '₹', locale: 'en_IN', label: 'Indian Rupee', rate: 1),
   Currency(code: 'USD', symbol: '\$', locale: 'en_US', label: 'US Dollar', rate: 0.012),
@@ -100,6 +121,7 @@ class AppState extends ChangeNotifier {
   bool splitOn = false;
   int splitCount = 4;
   bool recurringOn = false;
+  String recurEverySel = 'month'; // selected interval for the entry form
 
   // ---- preferences
   String themeMode = 'system'; // 'system' | 'light' | 'dark'
@@ -172,6 +194,7 @@ class AppState extends ChangeNotifier {
       if (d['name'] != null) name = d['name'] as String;
       if (d['onboarded'] == true) onboardingComplete = true;
     } catch (_) {/* ignore corrupt store */}
+    _applyRecurring(); // post any occurrences due since the last open
     notifyListeners();
   }
 
@@ -308,6 +331,7 @@ class AppState extends ChangeNotifier {
         editingId = null;
         splitOn = split;
         recurringOn = false;
+        recurEverySel = 'month';
         amount = '0';
         note = '';
         entryDate = iso(today);
@@ -331,6 +355,7 @@ class AppState extends ChangeNotifier {
         splitOn = t.split != null;
         splitCount = t.split != null ? t.split!.count : 4;
         recurringOn = t.recurring;
+        recurEverySel = t.recurEvery ?? 'month';
       });
 
   void close() => _commit(() {
@@ -379,6 +404,7 @@ class AppState extends ChangeNotifier {
     if (val <= 0) return;
     final id = editingId ?? _now();
     Txn row;
+    final every = recurringOn ? recurEverySel : null;
     if (entryMode == 'income') {
       row = Txn(
         id: id,
@@ -388,6 +414,7 @@ class AppState extends ChangeNotifier {
         title: note.isNotEmpty ? note : source,
         amount: val.round(),
         recurring: recurringOn,
+        recurEvery: every,
       );
     } else {
       final count = splitCount < 1 ? 1 : splitCount;
@@ -403,6 +430,7 @@ class AppState extends ChangeNotifier {
         amount: rec,
         split: splitOn ? Split(total: val.round(), count: count) : null,
         recurring: recurringOn,
+        recurEvery: every,
       );
     }
     _commit(() {
@@ -419,7 +447,14 @@ class AppState extends ChangeNotifier {
         if (!exists) {
           recurring = [
             ...recurring,
-            Recurring(id: _now() + 1, type: row.type, category: row.category, title: row.title, amount: row.amount),
+            Recurring(
+                id: _now() + 1,
+                type: row.type,
+                category: row.category,
+                title: row.title,
+                amount: row.amount,
+                freq: recurEverySel,
+                anchor: row.date),
           ];
         }
       }
@@ -473,14 +508,16 @@ class AppState extends ChangeNotifier {
       });
 
   void logRecurring(Recurring r) {
-    final id = _now();
+    final today_ = iso(today);
     final row = Txn(
-      id: id,
-      date: iso(today),
+      id: _now(),
+      date: today_,
       type: r.type,
       category: r.category,
       title: r.title,
       amount: r.amount,
+      recurring: true,
+      recurEvery: r.freq,
     );
     _commit(() {
       if (r.type == 'income') {
@@ -488,12 +525,70 @@ class AppState extends ChangeNotifier {
       } else {
         transactions = [row, ...transactions];
       }
+      // logging counts as this period's occurrence
+      recurring = recurring
+          .map((x) => x.id == r.id ? x.copyWith(anchor: today_) : x)
+          .toList();
       screen = 'home';
     });
   }
 
   void delRecurring(int id) =>
       _commit(() => recurring = recurring.where((r) => r.id != id).toList());
+
+  // ---- auto-posting of recurring entries -------------------------------
+  /// Returns the ISO date one [freq] interval after [isoDate].
+  String _advance(String isoDate, String freq) {
+    final d = parse(isoDate);
+    final next = switch (freq) {
+      'day' => d.add(const Duration(days: 1)),
+      'week' => d.add(const Duration(days: 7)),
+      'year' => DateTime(d.year + 1, d.month, d.day),
+      _ => DateTime(d.year, d.month + 1, d.day), // month
+    };
+    return iso(next);
+  }
+
+  /// Posts any recurring occurrences that have come due since each template's
+  /// last anchor, up to today. Called once on app open (from [load]).
+  void _applyRecurring() {
+    final todayIso = iso(today);
+    final addedTx = <Txn>[];
+    final addedInc = <Txn>[];
+    var idSeed = _now();
+    final updated = recurring.map((r) {
+      var anchor = r.anchor.isEmpty ? todayIso : r.anchor;
+      var guard = 0;
+      var next = _advance(anchor, r.freq);
+      while (next.compareTo(todayIso) <= 0 && guard < 500) {
+        final row = Txn(
+          id: idSeed++,
+          date: next,
+          type: r.type,
+          category: r.category,
+          title: r.title,
+          amount: r.amount,
+          recurring: true,
+          recurEvery: r.freq,
+        );
+        if (r.type == 'income') {
+          addedInc.add(row);
+        } else {
+          addedTx.add(row);
+        }
+        anchor = next;
+        next = _advance(anchor, r.freq);
+        guard++;
+      }
+      return r.copyWith(anchor: anchor);
+    }).toList();
+    recurring = updated;
+    if (addedTx.isNotEmpty || addedInc.isNotEmpty) {
+      transactions = [...addedTx, ...transactions];
+      income = [...addedInc, ...income];
+      _persist();
+    }
+  }
 
   void setCurrency(String code) {
     final from = kCurrencies.firstWhere((c) => c.code == currencyCode);
@@ -568,7 +663,7 @@ class AppState extends ChangeNotifier {
     final all = [...transactions, ...income];
     String esc(Object? v) => '"${(v ?? '').toString().replaceAll('"', '""')}"';
     final rows = <List<Object?>>[
-      ['date', 'type', 'category', 'title', 'amount', 'split_total', 'split_count', 'recurring']
+      ['date', 'type', 'category', 'title', 'amount', 'split_total', 'split_count', 'recurring', 'recur_every']
     ];
     for (final t in all) {
       rows.add([
@@ -580,6 +675,7 @@ class AppState extends ChangeNotifier {
         t.split?.total ?? '',
         t.split?.count ?? '',
         t.recurring ? '1' : '',
+        t.recurEvery ?? '',
       ]);
     }
     return rows.map((r) => r.map(esc).join(',')).join('\n');
@@ -644,8 +740,9 @@ class AppState extends ChangeNotifier {
         final st = at(5);
         final sc = at(6);
         final recurringFlag = at(7) == '1';
+        final every = at(8).isNotEmpty ? at(8) : (recurringFlag ? 'month' : null);
         if (type == 'income') {
-          inc.add(Txn(id: _now() + i, date: date, type: 'income', category: category, title: title, amount: amount, recurring: recurringFlag));
+          inc.add(Txn(id: _now() + i, date: date, type: 'income', category: category, title: title, amount: amount, recurring: recurringFlag, recurEvery: recurringFlag ? every : null));
         } else {
           tx.add(Txn(
             id: _now() + i,
@@ -656,12 +753,53 @@ class AppState extends ChangeNotifier {
             amount: amount,
             split: st.isNotEmpty ? Split(total: double.tryParse(st)?.round() ?? 0, count: int.tryParse(sc) ?? 1) : null,
             recurring: recurringFlag,
+            recurEvery: recurringFlag ? every : null,
           ));
+        }
+      }
+      // Rebuild categories / sources / recurring templates from the imported
+      // rows, since CSV only carries per-transaction data.
+      final cats2 = <Category>[...kDefaultCats];
+      final seenCat = cats2.map((c) => c.key.toLowerCase()).toSet();
+      var pal = 0;
+      for (final t in tx) {
+        if (t.category.isNotEmpty && seenCat.add(t.category.toLowerCase())) {
+          cats2.add(Category(
+              key: t.category,
+              label: t.category,
+              color: kPalette[pal++ % kPalette.length]));
+        }
+      }
+      final src2 = <String>[...kDefaultSources];
+      final seenSrc = src2.map((s) => s.toLowerCase()).toSet();
+      for (final t in inc) {
+        if (t.category.isNotEmpty && seenSrc.add(t.category.toLowerCase())) {
+          src2.add(t.category);
+        }
+      }
+      final rec2 = <Recurring>[];
+      final seenRec = <String>{};
+      var recId = _now();
+      for (final t in [...tx, ...inc]) {
+        if (!t.recurring) continue;
+        final k = '${t.type}|${t.category}|${t.title}';
+        if (seenRec.add(k)) {
+          rec2.add(Recurring(
+              id: recId++,
+              type: t.type,
+              category: t.category,
+              title: t.title,
+              amount: t.amount,
+              freq: t.recurEvery ?? 'month',
+              anchor: t.date));
         }
       }
       _commit(() {
         transactions = tx;
         income = inc;
+        cats = cats2;
+        sources = src2;
+        recurring = rec2;
         entryOpen = false;
         screen = 'home';
       });
