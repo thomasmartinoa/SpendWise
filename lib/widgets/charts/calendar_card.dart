@@ -16,11 +16,18 @@ class CalendarCard extends StatefulWidget {
 
 class _CalendarCardState extends State<CalendarCard> {
   int? _selectedDay; // 1-based, or null
+  String _lastMonth = '';
 
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     final c = AppColors.of(context);
+    // Clear the selection when the month changes so a day index from the old
+    // month can't run past the new month's length (avoids a RangeError).
+    if (app.viewMonth != _lastMonth) {
+      _lastMonth = app.viewMonth;
+      _selectedDay = null;
+    }
     final daily = app.dailyTotals(app.viewMonth); // index 0 == day 1
     final hasData = daily.any((v) => v > 0);
     final maxVal = hasData ? daily.reduce((a, b) => a > b ? a : b) : 1;
