@@ -134,6 +134,21 @@ class AppState extends ChangeNotifier {
   String name = '';
   bool onboardingComplete = false;
 
+  // which Insights cards are visible (default all on)
+  final Map<String, bool> insightCards = {
+    'summary': true,
+    'category': true,
+    'trend': true,
+    'daily': true,
+    'calendar': true,
+  };
+  bool insightOn(String key) => insightCards[key] ?? true;
+  void toggleInsight(String key) {
+    insightCards[key] = !insightOn(key);
+    _savePrefs();
+    notifyListeners();
+  }
+
   ThemeMode get materialThemeMode => switch (themeMode) {
         'light' => ThemeMode.light,
         'dark' => ThemeMode.dark,
@@ -184,6 +199,15 @@ class AppState extends ChangeNotifier {
       final nm = prefs.getString('pref_name');
       if (nm != null) name = nm;
       if (prefs.getBool('pref_onboarded') == true) onboardingComplete = true;
+      final ic = prefs.getString('insight_cards');
+      if (ic != null) {
+        try {
+          final m = (jsonDecode(ic) as Map).cast<String, dynamic>();
+          for (final k in insightCards.keys.toList()) {
+            if (m[k] is bool) insightCards[k] = m[k] as bool;
+          }
+        } catch (_) {}
+      }
     } catch (_) {/* ignore corrupt store */}
     _applyRecurring(); // post any occurrences due since the last open
     notifyListeners();
@@ -265,6 +289,7 @@ class AppState extends ChangeNotifier {
       await prefs.setString('pref_theme', themeMode);
       await prefs.setString('pref_name', name);
       await prefs.setBool('pref_onboarded', onboardingComplete);
+      await prefs.setString('insight_cards', jsonEncode(insightCards));
     } catch (_) {}
   }
 
@@ -902,6 +927,10 @@ class AppState extends ChangeNotifier {
     final t = name.trim();
     return t.isEmpty ? 'Y' : t[0].toUpperCase();
   }
+
+  /// Number of expense entries dated exactly [isoDate] (for the calendar).
+  int dayEntryCount(String isoDate) =>
+      transactions.where((t) => t.date == isoDate).length;
 
   // ============================ insights aggregations ============================
 

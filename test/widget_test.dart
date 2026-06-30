@@ -241,6 +241,32 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getBool('drift_migrated'), isTrue);
     });
+
+    test('insight cards default on and toggle flips them', () {
+      final app = AppState();
+      expect(app.insightOn('calendar'), isTrue);
+      expect(app.insightOn('trend'), isTrue);
+      app.toggleInsight('calendar');
+      expect(app.insightOn('calendar'), isFalse);
+      app.toggleInsight('calendar');
+      expect(app.insightOn('calendar'), isTrue);
+    });
+
+    test('load restores insight visibility from prefs', () async {
+      SharedPreferences.setMockInitialValues(
+          {'insight_cards': jsonEncode({'trend': false})});
+      final app = AppState();
+      await app.load();
+      expect(app.insightOn('trend'), isFalse);
+      expect(app.insightOn('daily'), isTrue); // unspecified keys stay default
+    });
+
+    test('dayEntryCount counts expenses on a date', () {
+      final app = AppState()..loadSampleData();
+      final d = app.transactions.first.date;
+      expect(app.dayEntryCount(d), greaterThanOrEqualTo(1));
+      expect(app.dayEntryCount('1999-01-01'), 0);
+    });
   });
 
   group('routing', () {
