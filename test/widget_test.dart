@@ -445,7 +445,41 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.text('Spending by category'), findsOneWidget);
-      expect(find.text('No spending recorded this month.'), findsNWidgets(2));
+      expect(find.text('No spending recorded this month.'), findsNWidgets(3));
+    });
+
+    testWidgets('honors per-card visibility toggles', (tester) async {
+      tester.view.physicalSize = const Size(440, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final app = AppState()..loadSampleData();
+      app.set(() => app.screen = 'insights');
+      await tester.pumpWidget(buildApp(app));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Spending by category'), findsOneWidget);
+
+      app.toggleInsight('category');
+      await tester.pump();
+      expect(find.text('Spending by category'), findsNothing);
+    });
+
+    testWidgets('shows the all-hidden message when every card is off',
+        (tester) async {
+      tester.view.physicalSize = const Size(440, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final app = AppState()..loadSampleData();
+      for (final k in ['summary', 'category', 'trend', 'daily', 'calendar']) {
+        app.toggleInsight(k);
+      }
+      app.set(() => app.screen = 'insights');
+      await tester.pumpWidget(buildApp(app));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('All insights are hidden.'), findsOneWidget);
     });
   });
 }
