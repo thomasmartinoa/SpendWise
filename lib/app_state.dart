@@ -238,14 +238,24 @@ class AppState extends ChangeNotifier {
     } catch (_) {/* ignore corrupt legacy blob */}
   }
 
+  Future<void>? _pendingSave;
+
   void _persist() {
-    // fire-and-forget; the store serializes overlapping writes
-    store.save(SpendSnapshot(
+    // fire-and-forget; the store serializes overlapping writes. We keep a
+    // handle to the latest write so flush() can await it before app exit.
+    _pendingSave = store.save(SpendSnapshot(
       entries: [...transactions, ...income],
       categories: cats,
       sources: sources,
       recurring: recurring,
     ));
+  }
+
+  /// Awaits the most recent in-flight write. Call this from a lifecycle
+  /// observer (app paused/detached) so the last mutation before exit isn't
+  /// lost if the process is killed while a write is still in flight.
+  Future<void> flush() async {
+    await _pendingSave;
   }
 
   Future<void> _savePrefs() async {

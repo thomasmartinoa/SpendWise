@@ -21,8 +21,35 @@ Future<void> main() async {
   );
 }
 
-class SpendWiseApp extends StatelessWidget {
+class SpendWiseApp extends StatefulWidget {
   const SpendWiseApp({super.key});
+
+  @override
+  State<SpendWiseApp> createState() => _SpendWiseAppState();
+}
+
+class _SpendWiseAppState extends State<SpendWiseApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Flush any in-flight write before the app is paused/killed so the last
+    // mutation isn't lost if the process is terminated immediately after.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      context.read<AppState>().flush();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
