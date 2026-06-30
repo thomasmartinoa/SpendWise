@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models.dart';
+import 'data/memory_store.dart';
+import 'data/spend_store.dart';
 
 const _storeKey = 'exptrack_v3';
 
@@ -66,7 +68,9 @@ const kCurrencies = <Currency>[
 /// Holds every piece of mutable app state and the full business logic, ported
 /// 1:1 from the prototype's `DCLogic` class.
 class AppState extends ChangeNotifier {
-  AppState() {
+  final SpendStore store;
+
+  AppState({SpendStore? store}) : store = store ?? MemoryStore() {
     final now = _stripTime(DateTime.now());
     today = now;
     viewMonth = monthKey(iso(now));
@@ -157,65 +161,100 @@ class AppState extends ChangeNotifier {
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_storeKey);
-      if (raw == null) return;
-      final d = jsonDecode(raw) as Map<String, dynamic>;
-      bool dated(dynamic a) =>
-          a is List && a.every((t) => t is Map && t['date'] is String);
-      if (dated(d['transactions'])) {
-        transactions = (d['transactions'] as List)
-            .map((e) => Txn.fromJson((e as Map).cast<String, dynamic>()))
-            .toList();
+
+      // one-time migration from the legacy JSON blob
+      if (prefs.getBool('drift_migrated') != true) {
+        await _migrateLegacy(prefs);
+        await prefs.setBool('drift_migrated', true);
       }
-      if (dated(d['income'])) {
-        income = (d['income'] as List)
-            .map((e) => Txn.fromJson((e as Map).cast<String, dynamic>()))
-            .toList();
-      }
-      if (d['cats'] is List) {
-        cats = (d['cats'] as List)
-            .map((e) => Category.fromJson((e as Map).cast<String, dynamic>()))
-            .toList();
-      }
-      if (d['sources'] is List) {
-        sources = (d['sources'] as List).map((e) => e.toString()).toList();
-      }
-      if (d['recurring'] is List) {
-        recurring = (d['recurring'] as List)
-            .map((e) => Recurring.fromJson((e as Map).cast<String, dynamic>()))
-            .toList();
-      }
-      if (d['currency'] != null) currencyCode = d['currency'] as String;
-      // 'theme' is now 'system'|'light'|'dark'; legacy 'light'/'dark' migrate
-      // as-is, anything else falls back to 'system'.
-      if (d['theme'] is String) {
-        final t = d['theme'] as String;
-        themeMode = (t == 'light' || t == 'dark') ? t : 'system';
-      }
-      if (d['name'] != null) name = d['name'] as String;
-      if (d['onboarded'] == true) onboardingComplete = true;
+
+      // data from the store
+      final snap = await store.load();
+      transactions = snap.entries.where((t) => t.type == 'expense').toList();
+      income = snap.entries.where((t) => t.type == 'income').toList();
+      if (snap.categories.isNotEmpty) cats = snap.categories;
+      if (snap.sources.isNotEmpty) sources = snap.sources;
+      recurring = snap.recurring;
+
+      // scalar prefs
+      final cur = prefs.getString('pref_currency');
+      if (cur != null) currencyCode = cur;
+      final th = prefs.getString('pref_theme');
+      if (th != null) themeMode = (th == 'light' || th == 'dark') ? th : 'system';
+      final nm = prefs.getString('pref_name');
+      if (nm != null) name = nm;
+      if (prefs.getBool('pref_onboarded') == true) onboardingComplete = true;
     } catch (_) {/* ignore corrupt store */}
     _applyRecurring(); // post any occurrences due since the last open
     notifyListeners();
   }
 
-  Future<void> _persist() async {
+  /// One-time import of the pre-Drift `exptrack_v3` JSON blob. Writes data
+  /// through the store and prefs through their new keys. Non-destructive: the
+  /// legacy blob is left in place as a backup.
+  Future<void> _migrateLegacy(SharedPreferences prefs) async {
+    try {
+      final raw = prefs.getString(_storeKey);
+      if (raw == null) return;
+      final d = jsonDecode(raw) as Map<String, dynamic>;
+      final entries = <Txn>[];
+      if (d['transactions'] is List) {
+        entries.addAll((d['transactions'] as List)
+            .map((e) => Txn.fromJson((e as Map).cast<String, dynamic>())));
+      }
+      if (d['income'] is List) {
+        entries.addAll((d['income'] as List)
+            .map((e) => Txn.fromJson((e as Map).cast<String, dynamic>())));
+      }
+      final cats2 = d['cats'] is List
+          ? (d['cats'] as List)
+              .map((e) => Category.fromJson((e as Map).cast<String, dynamic>()))
+              .toList()
+          : kDefaultCats.map((c) => c).toList();
+      final src2 = d['sources'] is List
+          ? (d['sources'] as List).map((e) => e.toString()).toList()
+          : List<String>.from(kDefaultSources);
+      final rec2 = d['recurring'] is List
+          ? (d['recurring'] as List)
+              .map((e) => Recurring.fromJson((e as Map).cast<String, dynamic>()))
+              .toList()
+          : <Recurring>[];
+      await store.save(SpendSnapshot(
+          entries: entries, categories: cats2, sources: src2, recurring: rec2));
+
+      if (d['currency'] is String) {
+        await prefs.setString('pref_currency', d['currency'] as String);
+      }
+      if (d['theme'] is String) {
+        final t = d['theme'] as String;
+        await prefs.setString('pref_theme', (t == 'light' || t == 'dark') ? t : 'system');
+      }
+      if (d['name'] is String) {
+        await prefs.setString('pref_name', d['name'] as String);
+      }
+      if (d['onboarded'] == true) {
+        await prefs.setBool('pref_onboarded', true);
+      }
+    } catch (_) {/* ignore corrupt legacy blob */}
+  }
+
+  void _persist() {
+    // fire-and-forget; the store serializes overlapping writes
+    store.save(SpendSnapshot(
+      entries: [...transactions, ...income],
+      categories: cats,
+      sources: sources,
+      recurring: recurring,
+    ));
+  }
+
+  Future<void> _savePrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        _storeKey,
-        jsonEncode({
-          'transactions': transactions.map((t) => t.toJson()).toList(),
-          'income': income.map((t) => t.toJson()).toList(),
-          'cats': cats.map((c) => c.toJson()).toList(),
-          'sources': sources,
-          'recurring': recurring.map((r) => r.toJson()).toList(),
-          'currency': currencyCode,
-          'theme': themeMode,
-          'name': name,
-          'onboarded': onboardingComplete,
-        }),
-      );
+      await prefs.setString('pref_currency', currencyCode);
+      await prefs.setString('pref_theme', themeMode);
+      await prefs.setString('pref_name', name);
+      await prefs.setBool('pref_onboarded', onboardingComplete);
     } catch (_) {}
   }
 
@@ -245,10 +284,9 @@ class AppState extends ChangeNotifier {
     themeMode = 'system';
     onboardingComplete = false;
     screen = 'home';
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_storeKey);
-    } catch (_) {}
+    await store.save(SpendSnapshot(
+        entries: const [], categories: cats, sources: sources, recurring: const []));
+    await _savePrefs();
     notifyListeners();
   }
 
@@ -257,6 +295,7 @@ class AppState extends ChangeNotifier {
   void _commit(VoidCallback mutate) {
     mutate();
     _persist();
+    _savePrefs();
     notifyListeners();
   }
 

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:spendwise/app_state.dart';
+import 'package:spendwise/data/memory_store.dart';
 import 'package:spendwise/main.dart';
 import 'package:spendwise/models.dart';
 import 'package:spendwise/root.dart';
@@ -177,6 +178,51 @@ void main() {
       expect(app.themeMode, 'dark');
       expect(app.onboardingComplete, isTrue);
       expect(app.name, 'Sam');
+    });
+
+    test('persists entries through an injected store and reloads them', () async {
+      final store = MemoryStore();
+      final a = AppState(store: store);
+      a.openEntry('expense', false);
+      a.cat = 'Food';
+      a.amount = '321';
+      a.save();
+      // a fresh AppState on the same store should see the saved entry
+      final b = AppState(store: store);
+      await b.load();
+      expect(b.transactions.any((t) => t.amount == 321), isTrue);
+    });
+
+    test('migrates the legacy exptrack_v3 blob into the store + prefs', () async {
+      SharedPreferences.setMockInitialValues({
+        'exptrack_v3': jsonEncode({
+          'transactions': [
+            {'id': 1, 'date': '2026-06-20', 'type': 'expense', 'category': 'Gym', 'title': 'Pass', 'amount': 200},
+          ],
+          'income': <dynamic>[],
+          'cats': [
+            {'key': 'Gym', 'label': 'Gym', 'color': 0xFF2A6FDB},
+          ],
+          'sources': ['Salary'],
+          'recurring': <dynamic>[],
+          'currency': 'USD',
+          'theme': 'dark',
+          'name': 'Thomas',
+          'onboarded': true,
+        }),
+      });
+      final app = AppState(store: MemoryStore());
+      await app.load();
+
+      expect(app.transactions.any((t) => t.category == 'Gym'), isTrue);
+      expect(app.cats.any((c) => c.key == 'Gym'), isTrue);
+      expect(app.currencyCode, 'USD');
+      expect(app.themeMode, 'dark');
+      expect(app.name, 'Thomas');
+      expect(app.onboardingComplete, isTrue);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('drift_migrated'), isTrue);
     });
   });
 
