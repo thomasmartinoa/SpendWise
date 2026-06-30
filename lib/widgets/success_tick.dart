@@ -52,7 +52,8 @@ class _SuccessTickState extends State<SuccessTick>
           return Opacity(
             opacity: fade,
             child: Container(
-              color: Color.fromRGBO(20, 20, 18, 0.22 * _seg(t, 0, 0.3)),
+              // a solid covered backdrop (not transparent) behind the tick
+              color: Color.fromRGBO(14, 14, 18, 0.96 * _seg(t, 0, 0.2)),
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
