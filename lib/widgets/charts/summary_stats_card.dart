@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app_state.dart';
 import '../../theme.dart';
+import 'insight_card.dart';
 
 /// Two-row summary card at the top of the Insights screen.
 /// Row 1: Income / Spent / Saved.
@@ -20,32 +21,35 @@ class SummaryStatsCard extends StatelessWidget {
     final pct = stats.deltaPct;
     final up = pct > 0;
     final noHistory = stats.prevMonthSpent == 0;
-    final deltaColor =
-        noHistory ? c.ink2 : (up ? Brand.accent : Brand.green);
+    final deltaColor = noHistory ? c.ink2 : (up ? Brand.accent : Brand.green);
     final deltaText = noHistory
         ? '—'
         : '${up ? '▲' : '▼'} ${(pct.abs() * 100).toStringAsFixed(0)}%';
 
-    return Container(
-      decoration: BoxDecoration(
-          color: c.card,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: c.line)),
-      padding: const EdgeInsets.all(18),
+    return InsightCard(
       child: Column(
         children: [
           // row 1
           IntrinsicHeight(
             child: Row(
               children: [
-                _Cell(label: 'Income', value: app.fmt(app.monthIncome),
-                    color: Brand.green),
+                _Cell(
+                  label: 'Income',
+                  value: app.fmt(app.monthIncome),
+                  color: Brand.green,
+                ),
                 _Vline(),
-                _Cell(label: 'Spent', value: app.fmt(app.monthSpent),
-                    color: Brand.accent),
+                _Cell(
+                  label: 'Spent',
+                  value: app.fmt(app.monthSpent),
+                  color: Brand.accent,
+                ),
                 _Vline(),
-                _Cell(label: 'Saved', value: app.fmt(saved),
-                    color: saved >= 0 ? Brand.green : Brand.accent),
+                _Cell(
+                  label: 'Saved',
+                  value: app.fmt(saved),
+                  color: saved >= 0 ? Brand.green : Brand.accent,
+                ),
               ],
             ),
           ),
@@ -54,20 +58,20 @@ class SummaryStatsCard extends StatelessWidget {
           Row(
             children: [
               _Cell(
-                  label: 'Savings',
-                  value: app.monthIncome == 0
-                      ? '—'
-                      : '${(stats.savingsRate * 100).toStringAsFixed(0)}%',
-                  color: app.monthIncome == 0
-                      ? null // neutral (ink) — no income logged yet
-                      : (stats.savingsRate >= 0 ? Brand.green : Brand.accent)),
+                label: 'Savings',
+                value: app.monthIncome == 0
+                    ? '—'
+                    : '${(stats.savingsRate * 100).toStringAsFixed(0)}%',
+                color: app.monthIncome == 0
+                    ? null // neutral (ink) — no income logged yet
+                    : (stats.savingsRate >= 0 ? Brand.green : Brand.accent),
+              ),
               _Vline(),
               _Cell(label: 'Avg/day', value: app.fmt(stats.avgPerDay)),
               _Vline(),
               _Cell(label: 'Biggest', value: app.fmt(stats.biggestExpense)),
               _Vline(),
-              _Cell(label: 'vs last mo.', value: deltaText,
-                  color: deltaColor),
+              _Cell(label: 'vs last mo.', value: deltaText, color: deltaColor),
             ],
           ),
         ],
@@ -85,14 +89,24 @@ class _Cell extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
     return Expanded(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label,
-            style: manrope(size: 11, weight: FontWeight.w600, color: c.ink2)),
-        const SizedBox(height: 4),
-        Text(value,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: manrope(size: 11, weight: FontWeight.w600, color: c.ink2),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
             style: manrope(
-                size: 14, weight: FontWeight.w700, color: color ?? c.ink)),
-      ]),
+              size: 14,
+              weight: FontWeight.w700,
+              color: color ?? c.ink,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -102,8 +116,9 @@ class _Vline extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
     return Container(
-        width: 1,
-        color: c.line,
-        margin: const EdgeInsets.symmetric(horizontal: 6));
+      width: 1,
+      color: c.line,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+    );
   }
 }

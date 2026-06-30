@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../app_state.dart';
 import '../../theme.dart';
+import 'insight_card.dart';
 
 /// Bar chart of expense total per day for the selected month.
 /// Zero-spend days are shown as invisible bars (color = transparent).
@@ -16,37 +17,21 @@ class DailySpendingCard extends StatelessWidget {
     final c = AppColors.of(context);
     final daily = app.dailyTotals(app.viewMonth);
     final hasData = daily.any((v) => v > 0);
-    final maxVal =
-        hasData ? daily.reduce((a, b) => a > b ? a : b).toDouble() : 1.0;
+    final maxVal = hasData
+        ? daily.reduce((a, b) => a > b ? a : b).toDouble()
+        : 1.0;
     final barWidth = daily.length > 20 ? 6.0 : 10.0;
 
-    return Container(
-      decoration: BoxDecoration(
-          color: c.card,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: c.line)),
+    return InsightCard(
+      title: 'Daily spending',
+      caption: app.monthName(app.viewMonth),
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Daily spending',
-              style: manrope(size: 15, weight: FontWeight.w700, color: c.ink)),
-          const SizedBox(height: 2),
-          Text(app.monthName(app.viewMonth),
-              style:
-                  manrope(size: 11.5, weight: FontWeight.w600, color: c.ink2)),
-          const SizedBox(height: 16),
-          if (!hasData)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 22),
-              child: Center(
-                child: Text('No spending recorded this month.',
-                    style: manrope(
-                        size: 13.5, weight: FontWeight.w600, color: c.ink2)),
-              ),
+      child: !hasData
+          ? const EmptyHint(
+              icon: Icons.bar_chart_rounded,
+              text: 'No spending recorded this month.',
             )
-          else
-            SizedBox(
+          : SizedBox(
               height: 160,
               child: BarChart(
                 BarChartData(
@@ -61,20 +46,24 @@ class DailySpendingCard extends StatelessWidget {
                         return BarTooltipItem(
                           'Day ${group.x + 1}\n${app.fmt(v)}',
                           manrope(
-                              size: 11,
-                              weight: FontWeight.w600,
-                              color: c.ink),
+                            size: 11,
+                            weight: FontWeight.w600,
+                            color: c.ink,
+                          ),
                         );
                       },
                     ),
                   ),
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                     rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                     topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
@@ -87,11 +76,14 @@ class DailySpendingCard extends StatelessWidget {
                           }
                           return Padding(
                             padding: const EdgeInsets.only(top: 5),
-                            child: Text('$day',
-                                style: manrope(
-                                    size: 10,
-                                    weight: FontWeight.w600,
-                                    color: c.ink2)),
+                            child: Text(
+                              '$day',
+                              style: manrope(
+                                size: 10,
+                                weight: FontWeight.w600,
+                                color: c.ink2,
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -109,11 +101,13 @@ class DailySpendingCard extends StatelessWidget {
                       barRods: [
                         BarChartRodData(
                           toY: e.value.toDouble(),
-                          color:
-                              e.value > 0 ? Brand.accent : Colors.transparent,
+                          color: e.value > 0
+                              ? Brand.accent
+                              : Colors.transparent,
                           width: barWidth,
                           borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(3)),
+                            top: Radius.circular(3),
+                          ),
                         ),
                       ],
                     );
@@ -121,8 +115,6 @@ class DailySpendingCard extends StatelessWidget {
                 ),
               ),
             ),
-        ],
-      ),
     );
   }
 }
