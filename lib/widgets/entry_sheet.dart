@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
@@ -713,14 +714,19 @@ class _Keypad extends StatelessWidget {
       childAspectRatio: 2.25,
       children: keys.map((k) {
         return GestureDetector(
-          onTap: () => app.press(k),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            app.press(k);
+          },
           child: Container(
             alignment: Alignment.center,
             decoration: BoxDecoration(
                 color: c.key, borderRadius: BorderRadius.circular(14)),
-            child: Text(k == 'back' ? '⌫' : k,
-                style:
-                    manrope(size: 22, weight: FontWeight.w700, color: c.ink)),
+            child: k == 'back'
+                ? Icon(Icons.backspace_outlined, size: 22, color: c.ink)
+                : Text(k,
+                    style: manrope(
+                        size: 22, weight: FontWeight.w700, color: c.ink)),
           ),
         );
       }).toList(),

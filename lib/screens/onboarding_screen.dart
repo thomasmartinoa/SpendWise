@@ -107,7 +107,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             'Log a shared bill and SpendWise auto-calculates just your share — no mental math.',
                       ),
                       const _FeaturePage(
-                        glyph: '◴',
+                        icon: Icons.insights_rounded,
                         accent: Brand.green,
                         tintBg: Brand.greenTintBg,
                         title: 'See where it goes',
@@ -213,10 +213,13 @@ class _WelcomePage extends StatelessWidget {
 }
 
 class _FeaturePage extends StatelessWidget {
-  final String glyph, title, body;
+  final String? glyph;
+  final IconData? icon;
+  final String title, body;
   final Color accent, tintBg;
   const _FeaturePage({
-    required this.glyph,
+    this.glyph,
+    this.icon,
     required this.title,
     required this.body,
     required this.accent,
@@ -237,9 +240,11 @@ class _FeaturePage extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
                 color: tintBg, borderRadius: BorderRadius.circular(28)),
-            child: Text(glyph,
-                style: manrope(
-                    size: 46, weight: FontWeight.w800, color: accent)),
+            child: icon != null
+                ? Icon(icon, size: 44, color: accent)
+                : Text(glyph ?? '',
+                    style: manrope(
+                        size: 46, weight: FontWeight.w800, color: accent)),
           ),
           const SizedBox(height: 28),
           Text(title,

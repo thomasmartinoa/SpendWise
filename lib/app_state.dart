@@ -519,7 +519,16 @@ class AppState extends ChangeNotifier {
       note = '';
       splitOn = false;
       recurringOn = false;
+      saveTick = true; // trigger the success-tick overlay
     });
+  }
+
+  /// True for the brief moment after a successful save; drives the GPay-style
+  /// success tick overlay. Transient UI state (not persisted).
+  bool saveTick = false;
+  void dismissTick() {
+    saveTick = false;
+    notifyListeners();
   }
 
   /// The entry currently being edited, if any (used to support undo on delete).

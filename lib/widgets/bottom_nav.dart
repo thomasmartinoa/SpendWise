@@ -38,12 +38,12 @@ class BottomNav extends StatelessWidget {
               onTap: () => app.go('insights')),
           const SizedBox(width: 64), // notch gap
           _NavItem(
-              icon: Icons.schedule,
+              icon: Icons.history,
               label: 'History',
               active: app.screen == 'history',
               onTap: () => app.go('history')),
           _NavItem(
-              icon: Icons.tune,
+              icon: Icons.settings_outlined,
               label: 'Settings',
               active: app.screen == 'settings',
               onTap: () => app.go('settings')),

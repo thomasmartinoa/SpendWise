@@ -5,9 +5,29 @@ import '../app_state.dart';
 import '../theme.dart';
 
 /// Read-only view of a single transaction. Tapping a row opens this; the
-/// "Edit" button hands off to the editor sheet.
-class TransactionDetail extends StatelessWidget {
+/// "Edit" button hands off to the editor sheet. Drag the sheet down (or tap the
+/// scrim) to dismiss.
+class TransactionDetail extends StatefulWidget {
   const TransactionDetail({super.key});
+
+  @override
+  State<TransactionDetail> createState() => _TransactionDetailState();
+}
+
+class _TransactionDetailState extends State<TransactionDetail> {
+  double _dragY = 0;
+
+  void _onDragUpdate(DragUpdateDetails d) {
+    setState(() => _dragY = (_dragY + d.delta.dy).clamp(0.0, 1000.0));
+  }
+
+  void _onDragEnd(DragEndDetails d, AppState app) {
+    if (_dragY > 110 || (d.primaryVelocity ?? 0) > 700) {
+      app.closeDetail();
+    } else {
+      setState(() => _dragY = 0);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +38,7 @@ class TransactionDetail extends StatelessWidget {
     final cat = app.catOf(t.category);
     final isInc = t.isIncome;
     final accent = isInc ? Brand.green : cat.color;
+    final dragProgress = (_dragY / 400).clamp(0.0, 1.0);
 
     return Stack(
       children: [
@@ -26,7 +47,7 @@ class TransactionDetail extends StatelessWidget {
             tween: Tween(begin: 0, end: 1),
             duration: const Duration(milliseconds: 180),
             builder: (_, v, _) => Opacity(
-              opacity: v,
+              opacity: v * (1 - dragProgress),
               child: GestureDetector(
                 onTap: app.closeDetail,
                 child: Container(color: const Color(0x66141412)),
@@ -36,186 +57,192 @@ class TransactionDetail extends StatelessWidget {
         ),
         Align(
           alignment: Alignment.bottomCenter,
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 1, end: 0),
-            duration: const Duration(milliseconds: 260),
-            curve: const Cubic(.22, 1, .36, 1),
-            builder: (_, v, child) =>
-                Transform.translate(offset: Offset(0, v * 520), child: child),
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: c.card,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              padding: EdgeInsets.fromLTRB(
-                  22, 10, 22, 26 + MediaQuery.of(context).padding.bottom),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 38,
-                      height: 5,
-                      margin: const EdgeInsets.only(top: 2, bottom: 18),
-                      decoration: BoxDecoration(
-                          color: c.line,
-                          borderRadius: BorderRadius.circular(3)),
-                    ),
-                  ),
-
-                  // header: avatar + title
-                  Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        alignment: Alignment.center,
+          child: GestureDetector(
+            onVerticalDragUpdate: _onDragUpdate,
+            onVerticalDragEnd: (d) => _onDragEnd(d, app),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 1, end: 0),
+              duration: const Duration(milliseconds: 260),
+              curve: const Cubic(.22, 1, .36, 1),
+              builder: (_, v, child) => Transform.translate(
+                  offset: Offset(0, v * 520 + _dragY), child: child),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: c.card,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                padding: EdgeInsets.fromLTRB(
+                    22, 10, 22, 26 + MediaQuery.of(context).padding.bottom),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 38,
+                        height: 5,
+                        margin: const EdgeInsets.only(top: 2, bottom: 18),
                         decoration: BoxDecoration(
-                            color: accent,
-                            borderRadius: BorderRadius.circular(14)),
-                        child: Text(
-                            isInc
-                                ? '+'
-                                : (cat.label.isNotEmpty
-                                    ? cat.label[0].toUpperCase()
-                                    : '?'),
-                            style: manrope(
-                                size: 18,
-                                weight: FontWeight.w700,
-                                color: Colors.white)),
+                            color: c.line,
+                            borderRadius: BorderRadius.circular(3)),
                       ),
-                      const SizedBox(width: 13),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(t.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: manrope(
-                                    size: 18,
-                                    weight: FontWeight.w800,
-                                    color: c.ink)),
-                            Text(isInc ? 'Income' : 'Expense',
-                                style: manrope(
-                                    size: 13,
-                                    weight: FontWeight.w600,
-                                    color: c.ink2)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-
-                  // amount
-                  Text(
-                    (isInc ? '+' : '−') + app.fmt(t.amount),
-                    style: manrope(
-                        size: 38,
-                        weight: FontWeight.w800,
-                        color: isInc ? Brand.green : c.ink,
-                        letterSpacing: -1),
-                  ),
-                  const SizedBox(height: 18),
-
-                  // details
-                  Container(
-                    decoration: BoxDecoration(
-                      color: c.field,
-                      borderRadius: BorderRadius.circular(16),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
+
+                    // header: avatar + title
+                    Row(
                       children: [
-                        _Row(
-                          label: isInc ? 'Source' : 'Category',
-                          valueWidget: Row(
+                        Container(
+                          width: 48,
+                          height: 48,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                              color: accent,
+                              borderRadius: BorderRadius.circular(14)),
+                          child: Text(
+                              isInc
+                                  ? '+'
+                                  : (cat.label.isNotEmpty
+                                      ? cat.label[0].toUpperCase()
+                                      : '?'),
+                              style: manrope(
+                                  size: 18,
+                                  weight: FontWeight.w700,
+                                  color: Colors.white)),
+                        ),
+                        const SizedBox(width: 13),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Container(
-                                  width: 9,
-                                  height: 9,
-                                  decoration: BoxDecoration(
-                                      color: accent,
-                                      borderRadius: BorderRadius.circular(3))),
-                              const SizedBox(width: 7),
-                              Text(isInc ? t.category : cat.label,
+                              Text(t.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                   style: manrope(
-                                      size: 14,
-                                      weight: FontWeight.w700,
+                                      size: 18,
+                                      weight: FontWeight.w800,
                                       color: c.ink)),
+                              Text(isInc ? 'Income' : 'Expense',
+                                  style: manrope(
+                                      size: 13,
+                                      weight: FontWeight.w600,
+                                      color: c.ink2)),
                             ],
                           ),
                         ),
-                        _Row(label: 'Date', value: _fullDate(app, t.date)),
-                        if (t.split != null)
-                          _Row(
-                              label: 'Split',
-                              value:
-                                  '${t.split!.count} ways · total ${app.fmt(t.split!.total)}'),
-                        if (t.recurring)
-                          _Row(label: 'Repeats', value: 'Monthly'),
-                        _Row(label: 'Note', value: t.title, last: true),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 18),
 
-                  // actions
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          final removed = t;
-                          app.removeTxn(removed);
-                          ScaffoldMessenger.of(context)
-                            ..clearSnackBars()
-                            ..showSnackBar(SnackBar(
-                              content: const Text('Entry deleted'),
-                              action: SnackBarAction(
-                                  label: 'Undo',
-                                  onPressed: () => app.restore(removed)),
-                            ));
-                        },
-                        child: Container(
-                          width: 54,
-                          height: 54,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Brand.accent, width: 1.5),
-                          ),
-                          child: const Icon(Icons.delete_outline,
-                              color: Brand.accent, size: 22),
-                        ),
+                    // amount
+                    Text(
+                      (isInc ? '+' : '−') + app.fmt(t.amount),
+                      style: manrope(
+                          size: 38,
+                          weight: FontWeight.w800,
+                          color: isInc ? Brand.green : c.ink,
+                          letterSpacing: -1),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // details
+                    Container(
+                      decoration: BoxDecoration(
+                        color: c.field,
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: app.editFromDetail,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          _Row(
+                            label: isInc ? 'Source' : 'Category',
+                            valueWidget: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                    width: 9,
+                                    height: 9,
+                                    decoration: BoxDecoration(
+                                        color: accent,
+                                        borderRadius:
+                                            BorderRadius.circular(3))),
+                                const SizedBox(width: 7),
+                                Text(isInc ? t.category : cat.label,
+                                    style: manrope(
+                                        size: 14,
+                                        weight: FontWeight.w700,
+                                        color: c.ink)),
+                              ],
+                            ),
+                          ),
+                          _Row(label: 'Date', value: _fullDate(app, t.date)),
+                          if (t.split != null)
+                            _Row(
+                                label: 'Split',
+                                value:
+                                    '${t.split!.count} ways · total ${app.fmt(t.split!.total)}'),
+                          if (t.recurring)
+                            _Row(label: 'Repeats', value: _capFreq(t.recurEvery)),
+                          _Row(label: 'Note', value: t.title, last: true),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // actions
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            final removed = t;
+                            app.removeTxn(removed);
+                            ScaffoldMessenger.of(context)
+                              ..clearSnackBars()
+                              ..showSnackBar(SnackBar(
+                                content: const Text('Entry deleted'),
+                                action: SnackBarAction(
+                                    label: 'Undo',
+                                    onPressed: () => app.restore(removed)),
+                              ));
+                          },
                           child: Container(
+                            width: 54,
                             height: 54,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: Brand.accent,
                               borderRadius: BorderRadius.circular(16),
+                              border:
+                                  Border.all(color: Brand.accent, width: 1.5),
                             ),
-                            child: Text('Edit',
-                                style: manrope(
-                                    size: 15.5,
-                                    weight: FontWeight.w800,
-                                    color: Colors.white)),
+                            child: const Icon(Icons.delete_outline,
+                                color: Brand.accent, size: 22),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: app.editFromDetail,
+                            child: Container(
+                              height: 54,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Brand.accent,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text('Edit',
+                                  style: manrope(
+                                      size: 15.5,
+                                      weight: FontWeight.w800,
+                                      color: Colors.white)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -223,11 +250,16 @@ class TransactionDetail extends StatelessWidget {
       ],
     );
   }
+}
 
-  String _fullDate(AppState app, String iso) {
-    final d = app.parse(iso);
-    return '${d.day} ${kMonths[d.month - 1]} ${d.year}';
-  }
+String _fullDate(AppState app, String iso) {
+  final d = app.parse(iso);
+  return '${d.day} ${kMonths[d.month - 1]} ${d.year}';
+}
+
+String _capFreq(String? every) {
+  final a = kFreqAdverb[every ?? 'month'] ?? 'monthly';
+  return a[0].toUpperCase() + a.substring(1);
 }
 
 class _Row extends StatelessWidget {

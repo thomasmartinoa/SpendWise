@@ -1,16 +1,22 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'app_state.dart';
 import 'data/database.dart';
 import 'data/drift_store.dart';
+import 'data/memory_store.dart';
+import 'data/spend_store.dart';
 import 'root.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final store = DriftStore(AppDatabase());
+  // Native (Android/iOS/desktop) uses the real SQLite store. Web has no SQLite
+  // runtime wired (out of scope), so it falls back to an ephemeral in-memory
+  // store instead of crashing on startup.
+  final SpendStore store = kIsWeb ? MemoryStore() : DriftStore(AppDatabase());
   final app = AppState(store: store);
   await app.load();
   runApp(

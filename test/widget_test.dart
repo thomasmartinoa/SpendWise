@@ -138,6 +138,23 @@ void main() {
       expect(app.transactions.every((t) => t.recurring), isTrue);
     });
 
+    test('a successful save raises then clears the success tick', () {
+      final app = AppState();
+      expect(app.saveTick, isFalse);
+      app.openEntry('expense', false);
+      app.amount = '50';
+      app.save();
+      expect(app.saveTick, isTrue); // tick shown after a real save
+      app.dismissTick();
+      expect(app.saveTick, isFalse);
+
+      // a no-op save (amount 0) must NOT raise the tick
+      app.openEntry('expense', false);
+      app.amount = '0';
+      app.save();
+      expect(app.saveTick, isFalse);
+    });
+
     test('editFromDetail closes the detail and opens the editor', () {
       final app = AppState()..loadSampleData();
       app.openDetail(app.transactions.first);

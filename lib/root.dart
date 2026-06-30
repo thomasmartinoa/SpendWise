@@ -9,6 +9,7 @@ import 'screens/settings_screen.dart';
 import 'theme.dart';
 import 'widgets/bottom_nav.dart';
 import 'widgets/entry_sheet.dart';
+import 'widgets/success_tick.dart';
 import 'widgets/transaction_detail.dart';
 
 /// The single app shell: active screen + notched bottom nav with a docked FAB,
@@ -77,6 +78,14 @@ class RootScaffold extends StatelessWidget {
                 const Positioned.fill(
                   child: Material(
                       type: MaterialType.transparency, child: EntrySheet()),
+                ),
+              // success tick sits above everything, including the sheets
+              if (app.saveTick)
+                Positioned.fill(
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: SuccessTick(onDone: app.dismissTick),
+                  ),
                 ),
             ],
           ),

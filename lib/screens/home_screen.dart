@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
@@ -18,53 +19,71 @@ class HomeScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 116),
       children: [
-        // header
-        Text(app.greeting,
-            style: manrope(size: 14, weight: FontWeight.w600, color: c.ink2)),
-        const SizedBox(height: 8),
-        const MonthSwitch(big: true),
-        const SizedBox(height: 20),
-
-        // hero
-        Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: c.hero,
-            borderRadius: BorderRadius.circular(24),
-          ),
+        // header + hero — horizontal swipe changes the viewed month
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragEnd: (d) {
+            final v = d.primaryVelocity ?? 0;
+            if (v < -80) {
+              HapticFeedback.selectionClick();
+              app.shiftMonth(1); // swipe left → next month
+            } else if (v > 80) {
+              HapticFeedback.selectionClick();
+              app.shiftMonth(-1); // swipe right → previous month
+            }
+          },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('LEFT TO SPEND',
-                  style: manrope(
-                      size: 12.5,
-                      weight: FontWeight.w600,
-                      color: const Color(0xFF9A9A90),
-                      letterSpacing: 0.3)),
-              const SizedBox(height: 7),
-              Text(app.fmt(app.monthIncome - app.monthSpent),
-                  style: manrope(
-                      size: 40,
-                      weight: FontWeight.w800,
-                      color: Colors.white,
-                      letterSpacing: -1)),
+              Text(app.greeting,
+                  style:
+                      manrope(size: 14, weight: FontWeight.w600, color: c.ink2)),
+              const SizedBox(height: 8),
+              const MonthSwitch(big: true),
               const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: _HeroStat(
-                        dot: Brand.greenDot,
-                        label: 'Income',
-                        value: app.fmt(app.monthIncome)),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _HeroStat(
-                        dot: Brand.accent,
-                        label: 'Spent',
-                        value: app.fmt(app.monthSpent)),
-                  ),
-                ],
+              // hero
+              Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: c.hero,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('LEFT TO SPEND',
+                        style: manrope(
+                            size: 12.5,
+                            weight: FontWeight.w600,
+                            color: const Color(0xFF9A9A90),
+                            letterSpacing: 0.3)),
+                    const SizedBox(height: 7),
+                    Text(app.fmt(app.monthIncome - app.monthSpent),
+                        style: manrope(
+                            size: 40,
+                            weight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -1)),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _HeroStat(
+                              dot: Brand.greenDot,
+                              label: 'Income',
+                              value: app.fmt(app.monthIncome)),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _HeroStat(
+                              dot: Brand.accent,
+                              label: 'Spent',
+                              value: app.fmt(app.monthSpent)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
