@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'app_state.dart';
+import 'data/database.dart';
+import 'data/drift_store.dart';
 import 'root.dart';
 import 'screens/onboarding_screen.dart';
 import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final app = AppState();
+  final store = DriftStore(AppDatabase());
+  final app = AppState(store: store);
   await app.load();
   runApp(
     ChangeNotifierProvider<AppState>.value(
