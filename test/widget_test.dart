@@ -260,6 +260,15 @@ void main() {
       expect(app.insightOn('daily'), isTrue); // unspecified keys stay default
     });
 
+    test('firstUnusedCatColor avoids colours already used', () {
+      final app = AppState(); // default cats already use several palette colours
+      final col = app.firstUnusedCatColor();
+      expect(
+        app.cats.any((cat) => cat.color.toARGB32() == col.toARGB32()),
+        isFalse,
+      );
+    });
+
     test('dayEntryCount counts expenses on a date', () {
       final app = AppState()..loadSampleData();
       final d = app.transactions.first.date;

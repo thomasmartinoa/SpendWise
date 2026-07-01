@@ -55,10 +55,11 @@ class _CategoryDonutCardState extends State<CategoryDonutCard> {
                               color: e.value.color,
                               radius: isTouched ? 72 : 62,
                               showTitle: false,
+                              borderSide: BorderSide(color: c.card, width: 2),
                             );
                           }).toList(),
                           centerSpaceRadius: 52,
-                          sectionsSpace: 2,
+                          sectionsSpace: 3,
                           pieTouchData: PieTouchData(
                             touchCallback: (event, response) {
                               setState(() {

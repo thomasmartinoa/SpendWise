@@ -747,6 +747,15 @@ class AppState extends ChangeNotifier {
   /// [fmt], it never rewrites stored amounts.
   void setCurrency(String code) => _commit(() => currencyCode = code);
 
+  /// First palette colour not already used by a category (fallback: first).
+  Color firstUnusedCatColor() {
+    final used = cats.map((c) => c.color.toARGB32()).toSet();
+    for (final col in kPalette) {
+      if (!used.contains(col.toARGB32())) return col;
+    }
+    return kPalette.first;
+  }
+
   void addCat() {
     final n = newCatName.trim();
     if (n.isEmpty) return;
@@ -757,6 +766,7 @@ class AppState extends ChangeNotifier {
     _commit(() {
       cats = [...cats, Category(key: n, label: n, color: newCatColor)];
       newCatName = '';
+      newCatColor = firstUnusedCatColor();
     });
   }
 
