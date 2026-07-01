@@ -266,6 +266,20 @@ void main() {
       expect(app.dayEntryCount(d), greaterThanOrEqualTo(1));
       expect(app.dayEntryCount('1999-01-01'), 0);
     });
+
+    test('backupMap round-trips through restoreFromBackup', () {
+      final a = AppState()..loadSampleData();
+      final map = a.backupMap();
+      final b = AppState();
+      b.restoreFromBackup(map);
+      expect(b.transactions.length, a.transactions.length);
+      expect(b.income.length, a.income.length);
+      expect(b.recurring.length, a.recurring.length);
+      expect(b.cats.map((c) => c.key).toSet(), a.cats.map((c) => c.key).toSet());
+      final aFood = a.cats.firstWhere((c) => c.key == 'Food');
+      final bFood = b.cats.firstWhere((c) => c.key == 'Food');
+      expect(bFood.color.toARGB32(), aFood.color.toARGB32()); // colour preserved
+    });
   });
 
   group('routing', () {

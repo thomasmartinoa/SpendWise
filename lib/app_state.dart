@@ -134,6 +134,7 @@ class AppState extends ChangeNotifier {
   String currencyCode = 'INR';
   String name = '';
   bool onboardingComplete = false;
+  String? lastBackup;
 
   // which Insights cards are visible (default all on)
   final Map<String, bool> insightCards = {
@@ -209,6 +210,7 @@ class AppState extends ChangeNotifier {
           }
         } catch (_) {}
       }
+      lastBackup = prefs.getString('pref_last_backup');
     } catch (e) {
       if (kDebugMode) debugPrint('SpendWise persistence: $e');
     }
@@ -295,6 +297,9 @@ class AppState extends ChangeNotifier {
       await prefs.setString('pref_name', name);
       await prefs.setBool('pref_onboarded', onboardingComplete);
       await prefs.setString('insight_cards', jsonEncode(insightCards));
+      if (lastBackup != null) {
+        await prefs.setString('pref_last_backup', lastBackup!);
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('SpendWise persistence: $e');
     }
@@ -329,6 +334,58 @@ class AppState extends ChangeNotifier {
     await store.save(SpendSnapshot(
         entries: const [], categories: cats, sources: sources, recurring: const []));
     await _savePrefs();
+    notifyListeners();
+  }
+
+  /// Full, lossless snapshot for JSON backup (same shape as the legacy blob).
+  Map<String, dynamic> backupMap() => {
+        'transactions': transactions.map((t) => t.toJson()).toList(),
+        'income': income.map((t) => t.toJson()).toList(),
+        'cats': cats.map((c) => c.toJson()).toList(),
+        'sources': sources,
+        'recurring': recurring.map((r) => r.toJson()).toList(),
+        'currency': currencyCode,
+        'theme': themeMode,
+        'name': name,
+      };
+
+  /// Replaces all data + prefs from a backup map (type-guarded per field).
+  void restoreFromBackup(Map<String, dynamic> d) {
+    List<Txn> txns(String k) => d[k] is List
+        ? (d[k] as List)
+            .map((e) => Txn.fromJson((e as Map).cast<String, dynamic>()))
+            .toList()
+        : <Txn>[];
+    _commit(() {
+      transactions = txns('transactions');
+      income = txns('income');
+      if (d['cats'] is List) {
+        cats = (d['cats'] as List)
+            .map((e) => Category.fromJson((e as Map).cast<String, dynamic>()))
+            .toList();
+      }
+      if (d['sources'] is List) {
+        sources = (d['sources'] as List).map((e) => e.toString()).toList();
+      }
+      if (d['recurring'] is List) {
+        recurring = (d['recurring'] as List)
+            .map((e) => Recurring.fromJson((e as Map).cast<String, dynamic>()))
+            .toList();
+      }
+      if (d['currency'] is String) currencyCode = d['currency'] as String;
+      if (d['theme'] is String) {
+        final t = d['theme'] as String;
+        themeMode = (t == 'light' || t == 'dark') ? t : 'system';
+      }
+      if (d['name'] is String) name = d['name'] as String;
+      screen = 'home';
+    });
+  }
+
+  /// Records that a backup export just happened (drives the reminder).
+  void markBackedUp() {
+    lastBackup = DateTime.now().toIso8601String();
+    _savePrefs();
     notifyListeners();
   }
 
