@@ -17,6 +17,7 @@ Future<void> exportCsv(AppState app) async {
     name: 'expense-backup.csv',
   );
   await Share.shareXFiles([file]);
+  app.markBackedUp();
 }
 
 /// Opens the file picker, reads a CSV and replaces the dataset.
