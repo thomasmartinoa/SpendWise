@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
-import '../csv_io.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
+import 'settings/backup_screen.dart';
+import 'settings/categories_screen.dart';
+import 'settings/recurring_screen.dart';
 import 'settings/settings_widgets.dart';
+import 'settings/sources_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -16,7 +19,9 @@ class SettingsScreen extends StatelessWidget {
     final c = AppColors.of(context);
     final cur = app.currency;
 
-    return ListView(
+    return Material(
+      type: MaterialType.transparency,
+      child: ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 116),
       children: [
         Text('Settings',
@@ -170,278 +175,32 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-
-        // ---- categories
-        const SectionLabel('Expense categories'),
-        Container(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
-          decoration: BoxDecoration(
-            color: c.card,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: c.line),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ...app.cats.map((cc) => Container(
-                    decoration: BoxDecoration(
-                        border:
-                            Border(bottom: BorderSide(color: c.line2))),
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    child: Row(
-                      children: [
-                        MiniBox(
-                            text: cc.label.isNotEmpty
-                                ? cc.label[0].toUpperCase()
-                                : '?',
-                            bg: cc.color,
-                            fg: Colors.white,
-                            size: 30),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(cc.label,
-                              style: manrope(
-                                  size: 14.5,
-                                  weight: FontWeight.w700,
-                                  color: c.ink)),
-                        ),
-                        DeleteX(onTap: () => app.delCat(cc.key)),
-                      ],
-                    ),
-                  )),
-              const SizedBox(height: 14),
-              // palette
-              Wrap(
-                spacing: 7,
-                children: kPalette.map<Widget>((col) {
-                  final sel = app.newCatColor == col;
-                  return GestureDetector(
-                    onTap: () => app.set(() => app.newCatColor = col),
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: col,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: sel ? c.ink : Colors.transparent,
-                            width: 2.5),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 11),
-              Row(
-                children: [
-                  Expanded(
-                    child: SoftField(
-                      value: app.newCatName,
-                      hint: 'New category name',
-                      onChanged: (v) => app.set(() => app.newCatName = v),
-                    ),
-                  ),
-                  const SizedBox(width: 9),
-                  AddButton(
-                      label: 'Add', color: Brand.accent, onTap: app.addCat),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // ---- income sources
-        const SectionLabel('Income sources'),
-        Container(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
-          decoration: BoxDecoration(
-            color: c.card,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: c.line),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ...app.sources.map((s) => Container(
-                    decoration: BoxDecoration(
-                        border:
-                            Border(bottom: BorderSide(color: c.line2))),
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    child: Row(
-                      children: [
-                        MiniBox(
-                            text: '+',
-                            bg: Brand.greenTintBg,
-                            fg: Brand.green,
-                            size: 30),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(s,
-                              style: manrope(
-                                  size: 14.5,
-                                  weight: FontWeight.w700,
-                                  color: c.ink)),
-                        ),
-                        DeleteX(onTap: () => app.delSource(s)),
-                      ],
-                    ),
-                  )),
-              const SizedBox(height: 13),
-              Row(
-                children: [
-                  Expanded(
-                    child: SoftField(
-                      value: app.newSourceName,
-                      hint: 'New income source',
-                      onChanged: (v) => app.set(() => app.newSourceName = v),
-                    ),
-                  ),
-                  const SizedBox(width: 9),
-                  AddButton(
-                      label: 'Add', color: Brand.green, onTap: app.addSource),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // ---- recurring
-        const SectionLabel('Recurring (monthly)'),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: c.card,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: c.line),
-          ),
-          child: app.recurring.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  child: Text(
-                      'Turn on "Repeat monthly" when adding an entry to keep it here for one-tap logging.',
-                      style: manrope(
-                          size: 13,
-                          weight: FontWeight.w600,
-                          color: c.ink2,
-                          height: 1.45)),
-                )
-              : Column(
-                  children: app.recurring.map((r) {
-                    final cc = app.catOf(r.category);
-                    final isInc = r.type == 'income';
-                    return Container(
-                      decoration: BoxDecoration(
-                          border:
-                              Border(bottom: BorderSide(color: c.line2))),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Row(
-                        children: [
-                          MiniBox(
-                              text: isInc
-                                  ? '+'
-                                  : (cc.label.isNotEmpty
-                                      ? cc.label[0].toUpperCase()
-                                      : '?'),
-                              bg: isInc ? Brand.green : cc.color,
-                              fg: Colors.white,
-                              size: 34),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(r.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: manrope(
-                                        size: 14,
-                                        weight: FontWeight.w700,
-                                        color: c.ink)),
-                                Text(
-                                    '${isInc ? 'Income' : cc.label} · ${app.fmt(r.amount)}${kFreqShort[r.freq] ?? '/mo'}',
-                                    style: manrope(
-                                        size: 12,
-                                        weight: FontWeight.w600,
-                                        color: c.ink2)),
-                              ],
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => app.logRecurring(r),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 7),
-                              decoration: BoxDecoration(
-                                  color: c.key,
-                                  borderRadius: BorderRadius.circular(10)),
-                              child: Text('Log now',
-                                  style: manrope(
-                                      size: 12.5,
-                                      weight: FontWeight.w700,
-                                      color: c.ink)),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          DeleteX(onTap: () => app.delRecurring(r.id)),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-        ),
-        const SizedBox(height: 24),
-
-        // ---- backup
-        const SectionLabel('Backup & restore'),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: c.card,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: c.line),
-          ),
-          child: Column(
-            children: [
-              BackupRow(
-                iconBg: Brand.greenTintBg,
-                iconColor: Brand.green,
-                glyph: '↓',
-                title: 'Export to CSV',
-                sub: 'download a backup file',
-                divider: true,
-                onTap: () => exportCsv(app),
-              ),
-              BackupRow(
-                iconBg: Brand.tintBg,
-                iconColor: Brand.accent,
-                glyph: '↑',
-                title: 'Import from CSV',
-                sub: 'restore from a backup',
-                divider: false,
-                onTap: () async {
-                  final go = await confirmDialog(
-                    context,
-                    title: 'Import backup?',
-                    message:
-                        'Importing a CSV replaces all of your current transactions and income. This cannot be undone.',
-                    confirmLabel: 'Import',
-                  );
-                  if (!go || !context.mounted) return;
-                  final ok = await importCsv(app);
-                  if (ok != null && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(ok
-                            ? 'Backup imported.'
-                            : 'Could not read that file.')));
-                  }
-                },
-              ),
-            ],
-          ),
-        ),
+        const SectionLabel('Manage'),
+        _NavRow(
+            icon: Icons.category_outlined,
+            label: 'Categories',
+            subtitle: '${app.cats.length} categories',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const CategoriesScreen()))),
+        _NavRow(
+            icon: Icons.account_balance_wallet_outlined,
+            label: 'Income sources',
+            subtitle: '${app.sources.length} sources',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const SourcesScreen()))),
+        _NavRow(
+            icon: Icons.repeat,
+            label: 'Recurring',
+            subtitle: '${app.recurring.length} items',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const RecurringScreen()))),
+        _NavRow(
+            icon: Icons.backup_outlined,
+            label: 'Backup & restore',
+            subtitle:
+                app.lastBackup == null ? 'never backed up' : 'backed up',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const BackupScreen()))),
         const SizedBox(height: 22),
         Center(
           child: Text('SpendWise · v1.0',
@@ -449,6 +208,7 @@ class SettingsScreen extends StatelessWidget {
                   manrope(size: 12, weight: FontWeight.w600, color: c.ink2)),
         ),
       ],
+      ),
     );
   }
 }
@@ -637,6 +397,62 @@ class _InsightToggle extends StatelessWidget {
             activeTrackColor: Brand.accent,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _NavRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final VoidCallback onTap;
+  const _NavRow(
+      {required this.icon,
+      required this.label,
+      this.subtitle,
+      required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          decoration: BoxDecoration(
+            color: c.card,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: c.line),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: c.ink2),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(label,
+                        style: manrope(
+                            size: 14.5, weight: FontWeight.w700, color: c.ink)),
+                    if (subtitle != null)
+                      Text(subtitle!,
+                          style: manrope(
+                              size: 11.5,
+                              weight: FontWeight.w600,
+                              color: c.ink2)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, size: 22, color: c.ink2),
+            ],
+          ),
+        ),
       ),
     );
   }
