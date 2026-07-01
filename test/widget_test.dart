@@ -61,16 +61,15 @@ void main() {
       expect(row.split?.count, 4);
     });
 
-    test('currency conversion scales stored amounts', () {
+    test('switching currency leaves amounts unchanged (display-only)', () {
       final app = AppState();
       app.openEntry('expense', false);
       app.amount = '1000';
       app.save();
-      final inrSpent = app.monthSpent;
-      expect(inrSpent, 1000);
+      expect(app.monthSpent, 1000);
       app.setCurrency('USD');
       expect(app.currencyCode, 'USD');
-      expect(app.monthSpent < inrSpent, isTrue); // 1000 * 0.012
+      expect(app.monthSpent, 1000); // amounts are NOT rewritten
     });
 
     test('CSV round-trips an entry', () {

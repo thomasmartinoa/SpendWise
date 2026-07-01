@@ -152,7 +152,7 @@ class SettingsScreen extends StatelessWidget {
                               size: 14.5,
                               weight: FontWeight.w700,
                               color: c.ink)),
-                      Text('Converts all amounts at indicative rates',
+                      Text('Sets the currency symbol used across the app.',
                           style: manrope(
                               size: 11.5,
                               weight: FontWeight.w600,

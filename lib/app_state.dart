@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:flutter/material.dart' hide Split;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -208,7 +209,9 @@ class AppState extends ChangeNotifier {
           }
         } catch (_) {}
       }
-    } catch (_) {/* ignore corrupt store */}
+    } catch (e) {
+      if (kDebugMode) debugPrint('SpendWise persistence: $e');
+    }
     _applyRecurring(); // post any occurrences due since the last open
     notifyListeners();
   }
@@ -259,7 +262,9 @@ class AppState extends ChangeNotifier {
       if (d['onboarded'] == true) {
         await prefs.setBool('pref_onboarded', true);
       }
-    } catch (_) {/* ignore corrupt legacy blob */}
+    } catch (e) {
+      if (kDebugMode) debugPrint('SpendWise persistence: $e');
+    }
   }
 
   Future<void>? _pendingSave;
@@ -290,7 +295,9 @@ class AppState extends ChangeNotifier {
       await prefs.setString('pref_name', name);
       await prefs.setBool('pref_onboarded', onboardingComplete);
       await prefs.setString('insight_cards', jsonEncode(insightCards));
-    } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) debugPrint('SpendWise persistence: $e');
+    }
   }
 
   /// Marks first-run setup complete and stores the chosen preferences.
@@ -679,34 +686,9 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void setCurrency(String code) {
-    final from = kCurrencies.firstWhere((c) => c.code == currencyCode);
-    final to = kCurrencies.firstWhere((c) => c.code == code, orElse: () => from);
-    if (from.code == to.code) {
-      _commit(() => currencyCode = code);
-      return;
-    }
-    final f = to.rate / from.rate;
-    int cv(int n) {
-      final v = (n * f).round();
-      return v < 0 ? 0 : v;
-    }
-
-    _commit(() {
-      currencyCode = code;
-      transactions = transactions
-          .map((t) => t.copyWith(
-              amount: cv(t.amount),
-              split: t.split == null
-                  ? null
-                  : Split(total: cv(t.split!.total), count: t.split!.count)))
-          .toList();
-      income = income.map((t) => t.copyWith(amount: cv(t.amount))).toList();
-      recurring = recurring
-          .map((r) => Recurring(id: r.id, type: r.type, category: r.category, title: r.title, amount: cv(r.amount)))
-          .toList();
-    });
-  }
+  /// Currency is display-only: switching changes the symbol/format used by
+  /// [fmt], it never rewrites stored amounts.
+  void setCurrency(String code) => _commit(() => currencyCode = code);
 
   void addCat() {
     final n = newCatName.trim();
