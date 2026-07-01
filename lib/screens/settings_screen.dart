@@ -5,6 +5,7 @@ import '../app_state.dart';
 import '../csv_io.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
+import 'settings/settings_widgets.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -140,7 +141,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                _MiniBox(text: cur.symbol, bg: c.key, fg: c.ink),
+                MiniBox(text: cur.symbol, bg: c.key, fg: c.ink),
                 const SizedBox(width: 13),
                 Expanded(
                   child: Column(
@@ -189,7 +190,7 @@ class SettingsScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 11),
                     child: Row(
                       children: [
-                        _MiniBox(
+                        MiniBox(
                             text: cc.label.isNotEmpty
                                 ? cc.label[0].toUpperCase()
                                 : '?',
@@ -204,7 +205,7 @@ class SettingsScreen extends StatelessWidget {
                                   weight: FontWeight.w700,
                                   color: c.ink)),
                         ),
-                        _DeleteX(onTap: () => app.delCat(cc.key)),
+                        DeleteX(onTap: () => app.delCat(cc.key)),
                       ],
                     ),
                   )),
@@ -241,7 +242,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 9),
-                  _AddButton(
+                  AddButton(
                       label: 'Add', color: Brand.accent, onTap: app.addCat),
                 ],
               ),
@@ -269,7 +270,7 @@ class SettingsScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 11),
                     child: Row(
                       children: [
-                        _MiniBox(
+                        MiniBox(
                             text: '+',
                             bg: Brand.greenTintBg,
                             fg: Brand.green,
@@ -282,7 +283,7 @@ class SettingsScreen extends StatelessWidget {
                                   weight: FontWeight.w700,
                                   color: c.ink)),
                         ),
-                        _DeleteX(onTap: () => app.delSource(s)),
+                        DeleteX(onTap: () => app.delSource(s)),
                       ],
                     ),
                   )),
@@ -297,7 +298,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 9),
-                  _AddButton(
+                  AddButton(
                       label: 'Add', color: Brand.green, onTap: app.addSource),
                 ],
               ),
@@ -337,7 +338,7 @@ class SettingsScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Row(
                         children: [
-                          _MiniBox(
+                          MiniBox(
                               text: isInc
                                   ? '+'
                                   : (cc.label.isNotEmpty
@@ -384,7 +385,7 @@ class SettingsScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          _DeleteX(onTap: () => app.delRecurring(r.id)),
+                          DeleteX(onTap: () => app.delRecurring(r.id)),
                         ],
                       ),
                     );
@@ -404,7 +405,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _BackupRow(
+              BackupRow(
                 iconBg: Brand.greenTintBg,
                 iconColor: Brand.green,
                 glyph: '↓',
@@ -413,7 +414,7 @@ class SettingsScreen extends StatelessWidget {
                 divider: true,
                 onTap: () => exportCsv(app),
               ),
-              _BackupRow(
+              BackupRow(
                 iconBg: Brand.tintBg,
                 iconColor: Brand.accent,
                 glyph: '↑',
@@ -492,7 +493,7 @@ void _showCurrencyPicker(BuildContext context, AppState app) {
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 child: Row(
                   children: [
-                    _MiniBox(text: cu.symbol, bg: c.key, fg: c.ink),
+                    MiniBox(text: cu.symbol, bg: c.key, fg: c.ink),
                     const SizedBox(width: 13),
                     Expanded(
                       child: Text(cu.label,
@@ -548,124 +549,6 @@ class _Segment extends StatelessWidget {
                   size: 13.5,
                   weight: FontWeight.w700,
                   color: selected ? c.ink : c.ink2)),
-        ),
-      ),
-    );
-  }
-}
-
-class _MiniBox extends StatelessWidget {
-  final String text;
-  final Color bg, fg;
-  final double size;
-  const _MiniBox(
-      {required this.text, required this.bg, required this.fg, this.size = 34});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(size * 0.3)),
-      child: Text(text,
-          style: manrope(
-              size: size * 0.45, weight: FontWeight.w800, color: fg)),
-    );
-  }
-}
-
-class _DeleteX extends StatelessWidget {
-  final VoidCallback onTap;
-  const _DeleteX({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AppColors.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 26,
-        height: 26,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(color: c.key, shape: BoxShape.circle),
-        child: Text('×',
-            style: manrope(size: 15, weight: FontWeight.w700, color: c.ink2)),
-      ),
-    );
-  }
-}
-
-class _AddButton extends StatelessWidget {
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  const _AddButton(
-      {required this.label, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        alignment: Alignment.center,
-        decoration:
-            BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
-        child: Text(label,
-            style:
-                manrope(size: 14, weight: FontWeight.w800, color: Colors.white)),
-      ),
-    );
-  }
-}
-
-class _BackupRow extends StatelessWidget {
-  final Color iconBg, iconColor;
-  final String glyph, title, sub;
-  final bool divider;
-  final VoidCallback onTap;
-  const _BackupRow({
-    required this.iconBg,
-    required this.iconColor,
-    required this.glyph,
-    required this.title,
-    required this.sub,
-    required this.divider,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AppColors.of(context);
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        decoration: divider
-            ? BoxDecoration(border: Border(bottom: BorderSide(color: c.line2)))
-            : null,
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        child: Row(
-          children: [
-            _MiniBox(text: glyph, bg: iconBg, fg: iconColor),
-            const SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(title,
-                      style: manrope(
-                          size: 14.5, weight: FontWeight.w700, color: c.ink)),
-                  Text(sub,
-                      style: manrope(
-                          size: 11.5, weight: FontWeight.w600, color: c.ink2)),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
