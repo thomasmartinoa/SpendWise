@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android Auto Backup (API <= 30). Include the app's private data so the
+     Drift SQLite database, shared_preferences, and local snapshots are backed
+     up to the user's Google Drive. -->
+<full-backup-content>
+    <include domain="file" path="." />
+    <include domain="database" path="." />
+    <include domain="sharedpref" path="." />
+</full-backup-content>
