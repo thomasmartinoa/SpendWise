@@ -65,6 +65,11 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.20.0
   build_runner: ^2.4.13
+  # Used only in test/data/settings_pages_test.dart to fake path_provider so
+  # SnapshotStore's directory lookup fails fast instead of hanging on real
+  # platform I/O under `flutter test`.
+  path_provider_platform_interface: ^2.1.2
+  plugin_platform_interface: ^2.1.7
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
