@@ -54,12 +54,15 @@ Three source PNGs, all 1024×1024, committed under `branding/`:
    minimal SVG containing only the `linearGradient` rect.
 
 3. **`branding/icon_fg_1024.png`** — the Android adaptive **foreground** layer:
-   the white "S" monogram on a **transparent** background, inset to ~62% of the
-   canvas so it sits inside Android's adaptive safe zone (outer ~⅓ may be
-   clipped). Rendered from an SVG that wraps the existing S path in
-   `transform="translate(512,512) scale(0.62) translate(-512,-512)"` (scales the
-   S about the canvas centre), with the browser screenshot taken with
-   transparency preserved (`omitBackground`).
+   the white "S" monogram on a **transparent** background. The logo's S already
+   sits within Android's adaptive safe zone at its original geometry — its
+   farthest stroke extent is ≈242px from the canvas centre versus a ≈312px safe
+   radius — so it is rendered at original size (no scaling), which keeps its
+   visual weight matching the brand mark. Rendered from an SVG containing just
+   the existing S path, with the browser screenshot taken with transparency
+   preserved (`omitBackground`). If a visual check shows it too large or small,
+   a `transform="translate(512,512) scale(K) translate(-512,-512)"` wrapper can
+   inset/enlarge it, but the default (no transform) is expected to be correct.
 
 ### flutter_launcher_icons config (in `pubspec.yaml`)
 
