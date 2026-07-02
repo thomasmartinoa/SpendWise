@@ -53,7 +53,9 @@ class _SpendWiseAppState extends State<SpendWiseApp> with WidgetsBindingObserver
     // mutation isn't lost if the process is terminated immediately after.
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
-      context.read<AppState>().flush();
+      final app = context.read<AppState>();
+      app.flush();
+      app.writeAutoSnapshot();
     }
   }
 

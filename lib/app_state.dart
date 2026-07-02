@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'models.dart';
 import 'data/memory_store.dart';
 import 'data/spend_store.dart';
+import 'data/snapshot_store.dart';
 
 part 'app_state_insights.dart';
 part 'app_state_csv.dart';
@@ -73,6 +74,7 @@ const kCurrencies = <Currency>[
 /// 1:1 from the prototype's `DCLogic` class.
 class AppState extends ChangeNotifier {
   final SpendStore store;
+  final SnapshotStore _snapshots = SnapshotStore();
 
   AppState({SpendStore? store}) : store = store ?? MemoryStore() {
     final now = _stripTime(DateTime.now());
@@ -391,6 +393,11 @@ class AppState extends ChangeNotifier {
     _savePrefs();
     notifyListeners();
   }
+
+  /// Writes one deduped local snapshot of the current state. Called from the
+  /// app-background lifecycle hook. Non-fatal: failures are swallowed by the
+  /// store, so this never throws.
+  Future<void> writeAutoSnapshot() => _snapshots.write(backupMap());
 
   /// Apply a mutation, persist, and notify listeners — the equivalent of the
   /// prototype's setState + componentDidUpdate.
