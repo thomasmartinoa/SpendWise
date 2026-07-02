@@ -12,6 +12,10 @@
 .swiftpm/
 migrate_working_dir/
 
+# Local scratch (browser snapshots, SDD ledger/artifacts)
+.playwright-mcp/
+.superpowers/
+
 # IntelliJ related
 *.iml
 *.ipr
