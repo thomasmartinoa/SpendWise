@@ -54,20 +54,43 @@ class BottomNav extends StatelessWidget {
 }
 
 /// The orange add button, docked into the [BottomNav] notch.
+///
+/// The FAB itself stays the default 56x56 size (so the notch geometry is
+/// identical to before), but a card-colored backdrop disc — matching the
+/// bar's own 56 + notchMargin(9) halo — renders behind it and overflows the
+/// FAB's own bounds. It fills the notch cutout with an opaque, bar-matching
+/// color instead of letting the notch expose the Scaffold's darker (and
+/// mismatched) background.
 class SpendFab extends StatelessWidget {
   const SpendFab({super.key});
 
   @override
   Widget build(BuildContext context) {
     final app = context.read<AppState>();
-    return FloatingActionButton(
-      onPressed: () => app.openEntry('expense', false),
-      backgroundColor: Brand.accent,
-      foregroundColor: Colors.white,
-      elevation: 3,
-      highlightElevation: 4,
-      shape: const CircleBorder(),
-      child: const Icon(Icons.add, size: 30),
+    final c = AppColors.of(context);
+    return SizedBox(
+      width: 56,
+      height: 56,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 74,
+            height: 74,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: c.card),
+          ),
+          FloatingActionButton(
+            onPressed: () => app.openEntry('expense', false),
+            backgroundColor: Brand.accent,
+            foregroundColor: Colors.white,
+            elevation: 3,
+            highlightElevation: 4,
+            shape: const CircleBorder(),
+            child: const Icon(Icons.add, size: 30),
+          ),
+        ],
+      ),
     );
   }
 }

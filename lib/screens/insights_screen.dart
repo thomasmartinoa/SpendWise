@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
@@ -28,14 +29,33 @@ class InsightsScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 116),
       children: [
-        Text('Insights',
-            style: manrope(
-                size: 24,
-                weight: FontWeight.w800,
-                color: c.ink,
-                letterSpacing: -0.5)),
-        const SizedBox(height: 10),
-        const MonthSwitch(),
+        // header — horizontal swipe changes the viewed month, same as Home.
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragEnd: (d) {
+            final v = d.primaryVelocity ?? 0;
+            if (v < -80) {
+              HapticFeedback.selectionClick();
+              app.shiftMonth(1); // swipe left → next month
+            } else if (v > 80) {
+              HapticFeedback.selectionClick();
+              app.shiftMonth(-1); // swipe right → previous month
+            }
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Insights',
+                  style: manrope(
+                      size: 24,
+                      weight: FontWeight.w800,
+                      color: c.ink,
+                      letterSpacing: -0.5)),
+              const SizedBox(height: 10),
+              const MonthSwitch(),
+            ],
+          ),
+        ),
         const SizedBox(height: 16),
         if (cards.isEmpty)
           Padding(

@@ -6,6 +6,7 @@ import '../theme.dart';
 import '../widgets/ui.dart';
 import 'settings/backup_screen.dart';
 import 'settings/categories_screen.dart';
+import 'settings/insights_screen.dart';
 import 'settings/recurring_screen.dart';
 import 'settings/settings_widgets.dart';
 import 'settings/sources_screen.dart';
@@ -111,27 +112,6 @@ class SettingsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 24),
 
-        // ---- insights visibility
-        const SectionLabel('Insights'),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: c.card,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: c.line),
-          ),
-          child: Column(
-            children: const [
-              _InsightToggle(label: 'Summary stats', k: 'summary'),
-              _InsightToggle(label: 'Category donut', k: 'category'),
-              _InsightToggle(label: 'Monthly trend', k: 'trend'),
-              _InsightToggle(label: 'Daily spending', k: 'daily'),
-              _InsightToggle(label: 'Calendar', k: 'calendar', last: true),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
         // ---- currency (collapsed to the selected one; tap to change)
         const SectionLabel('Currency'),
         InkWell(
@@ -176,6 +156,13 @@ class SettingsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         const SectionLabel('Manage'),
+        _NavRow(
+            icon: Icons.bar_chart_rounded,
+            label: 'Insights',
+            subtitle:
+                '${app.insightCards.values.where((v) => v).length} of ${app.insightCards.length} cards shown',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const InsightsSettingsScreen()))),
         _NavRow(
             icon: Icons.category_outlined,
             label: 'Categories',
@@ -364,39 +351,6 @@ class _BareFieldState extends State<_BareField> {
         border: InputBorder.none,
         hintText: widget.hint,
         hintStyle: widget.style.copyWith(color: c.ink2),
-      ),
-    );
-  }
-}
-
-class _InsightToggle extends StatelessWidget {
-  final String label;
-  final String k;
-  final bool last;
-  const _InsightToggle(
-      {required this.label, required this.k, this.last = false});
-
-  @override
-  Widget build(BuildContext context) {
-    final app = context.watch<AppState>();
-    final c = AppColors.of(context);
-    return Container(
-      decoration: last
-          ? null
-          : BoxDecoration(border: Border(bottom: BorderSide(color: c.line2))),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(label,
-                style:
-                    manrope(size: 14.5, weight: FontWeight.w700, color: c.ink)),
-          ),
-          Switch(
-            value: app.insightOn(k),
-            onChanged: (_) => app.toggleInsight(k),
-            activeTrackColor: Brand.accent,
-          ),
-        ],
       ),
     );
   }

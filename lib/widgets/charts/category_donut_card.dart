@@ -41,67 +41,76 @@ class _CategoryDonutCardState extends State<CategoryDonutCard> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  height: 190,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      PieChart(
-                        PieChartData(
-                          sections: slices.asMap().entries.map((e) {
-                            final isTouched = e.key == _touched;
-                            return PieChartSectionData(
-                              value: e.value.amount.toDouble(),
-                              color: e.value.color,
-                              radius: isTouched ? 72 : 62,
-                              showTitle: false,
-                              borderSide: BorderSide(color: c.card, width: 2),
-                            );
-                          }).toList(),
-                          centerSpaceRadius: 52,
-                          sectionsSpace: 3,
-                          pieTouchData: PieTouchData(
-                            touchCallback: (event, response) {
-                              setState(() {
-                                if (!event.isInterestedForInteractions ||
-                                    response?.touchedSection == null) {
-                                  _touched = -1;
-                                } else {
-                                  _touched = response!
-                                      .touchedSection!
-                                      .touchedSectionIndex;
-                                }
-                              });
-                            },
+                const SizedBox(height: 8),
+                Center(
+                  child: SizedBox(
+                    width: 190,
+                    height: 190,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        PieChart(
+                          PieChartData(
+                            sections: slices.asMap().entries.map((e) {
+                              final isTouched = e.key == _touched;
+                              return PieChartSectionData(
+                                value: e.value.amount.toDouble(),
+                                color: e.value.color,
+                                radius: isTouched ? 66 : 58,
+                                showTitle: false,
+                              );
+                            }).toList(),
+                            centerSpaceRadius: 56,
+                            sectionsSpace: 3,
+                            pieTouchData: PieTouchData(
+                              touchCallback: (event, response) {
+                                setState(() {
+                                  if (!event.isInterestedForInteractions ||
+                                      response?.touchedSection == null) {
+                                    _touched = -1;
+                                  } else {
+                                    _touched = response!
+                                        .touchedSection!
+                                        .touchedSectionIndex;
+                                  }
+                                });
+                              },
+                            ),
                           ),
                         ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _touched >= 0 && _touched < slices.length
-                                ? app.fmt(slices[_touched].amount)
-                                : app.fmt(app.monthSpent),
-                            style: manrope(
-                              size: 16,
-                              weight: FontWeight.w700,
-                              color: c.ink,
+                        SizedBox(
+                          width: 92,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _touched >= 0 && _touched < slices.length
+                                      ? app.fmt(slices[_touched].amount)
+                                      : app.fmt(app.monthSpent),
+                                  style: manrope(
+                                    size: 16,
+                                    weight: FontWeight.w700,
+                                    color: c.ink,
+                                  ),
+                                ),
+                                Text(
+                                  _touched >= 0 && _touched < slices.length
+                                      ? slices[_touched].label
+                                      : 'total',
+                                  style: manrope(
+                                    size: 11,
+                                    weight: FontWeight.w600,
+                                    color: c.ink2,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Text(
-                            _touched >= 0 && _touched < slices.length
-                                ? slices[_touched].label
-                                : 'total',
-                            style: manrope(
-                              size: 11,
-                              weight: FontWeight.w600,
-                              color: c.ink2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
